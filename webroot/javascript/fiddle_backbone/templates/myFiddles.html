@@ -1,0 +1,136 @@
+<form>
+
+    <div class="modal-body tab-content">
+    
+    {{#if fiddles.length}}
+        
+    <table class="table table-striped" id="fiddle_history_table">
+        <thead>
+            <th>Database Type</th>
+            <th>Identifier</th>
+            <th>My Last Access</th>
+            <th colspan="3">&nbsp;</th>
+        </thead>
+        <tbody>
+        
+        {{#each fiddles}}
+            <tr class="schemaLog" schemaGroup="{{schemaGroup}}">
+                <td>{{full_name}}</td>
+                <td><a class="fiddleLink" href="#{{schemaFragment}}">#{{schemaFragment}}</a></td>
+                <td>{{last_used}}</td>
+                <td>&nbsp;</td>
+                <td>
+                    {{#if structure}}
+                        
+                        <div class="schemaPreviewWrapper">
+        
+                                <ul class="tables">
+                                    
+                                    {{#each structure}}
+                                    <li>
+                                        {{table_name}} ({{table_type}})
+                                        <ul class="columns">
+                                            {{#each columns}}
+                                            <li>{{name}} {{type}}</li>
+                                            {{/each}}
+                                        </ul>
+                                    </li>
+                                    {{/each}}
+                                    
+                                </ul>
+                        </div>  
+                        <a data-container="#myFiddlesModal" href="#{{schemaFragment}}" class="fiddleLink label label-info preview-schema popover-anchor">{{structure.length}} tables</a>
+
+                    {{else}}
+
+                        <div class="schemaPreviewWrapper">
+                            <div class="schemaPreview">
+                                {{ddl}}
+                            </div>
+                        </div>
+                        <a data-container="#myFiddlesModal" href="#{{schemaFragment}}" class="fiddleLink label label-info preview-ddl popover-anchor">preview ddl</a>
+
+                    {{/if}}
+                    
+                </td>
+    
+                <td>
+                    <button class="btn btn-mini btn-warning forgetSchema" schemaFragment="{{schemaFragment}}" title="This will remove the schema and all related queries from your list.">Forget Schema</button>
+                    {{#if hasMultipleQueries}}
+                        <button class="btn btn-mini showAll">Show All {{queries.length}} Queries</button>
+                    {{/if}}
+                </td>
+    
+            </tr>
+
+
+            {{#each queries}}
+                <tr class="queryLog for-schema-{{../schemaGroup}}{{#unless displayByDefault}} queryLog-hidden{{/unless}}" schemaGroup="{{../schemaGroup}}" fragment="{{fragment}}">
+                    <td>&nbsp;</td>
+                    <td><a class="fiddleLink" href="#{{fragment}}">#{{fragment}}</a></td>
+                    <td>{{last_used}}</td>
+                    <td class="favoriteLink">
+                        {{#if ../../anonymous}}
+                            <i class="icon-star-empty"></i>
+                        {{else}}
+                            {{#if favorite}}
+                                <a href="#toggleFavorite" favorite="true" fragment="{{fragment}}" title="Remove from favorites"><i class="icon-star"></i></a>
+                            {{else}}
+                                <a href="#toggleFavorite" favorite="false" fragment="{{fragment}}" title="Add to favorites"><i class="icon-star-empty"></i></a>
+                            {{/if}}
+                        {{/if}}
+                    </td>
+                    <td>
+                        {{#if sets}}
+
+                            <div class="resultSetWrapper">
+                                <ol class="resultSetPreview">
+                                    {{#each sets}}
+                                        <li class="statement_preview"><pre>{{statement_sql}}</pre></li>
+                                        {{#if succeeded}}
+                                            <li class="alert alert-success">Rows: {{row_count}} {{#if columns.length}} Cols: {{columns}}{{/if}}</li>
+                                        {{else}}
+                                            <li class="alert alert-error">{{error_message}}</li>
+                                        {{/if}}
+                                    {{/each}}
+                                </ol>
+                            </div>
+                            <a data-container="#myFiddlesModal" href="#{{fragment}}" class="fiddleLink label label-info result-sets popover-anchor">{{sets.length}} result sets</a>
+
+                        {{else}}
+
+                            <div class="resultSetWrapper">
+                                <div class="resultSetPreview">
+                                    {{sql}}
+                                </div>
+                            </div>
+                            <a data-container="#myFiddlesModal" href="#{{fragment}}" class="fiddleLink label label-info preview-sql popover-anchor">preview sql</a>
+
+                        {{/if}}
+                    </td>
+                    <td><button class="btn btn-mini btn-warning forgetQuery" fragment="{{fragment}}" title="This will remove this query from your list.">Forget This Query</button>{{#if ../hasMultipleQueries}}<button class="btn btn-mini btn-warning forgetOtherQueries" fragment="{{fragment}}" schemaFragment="{{../schemaFragment}}" title="This will remove all other queries for this schema from your list.">Forget Others</button>{{/if}}</td>
+                </tr>
+            {{/each}}
+
+        {{/each}}
+        </tbody>
+    </table>
+
+        {{#if anonymous}}
+            <div class="alert">
+                <strong>Tip for anonymous users:</strong>
+                These fiddle links will only be bookmarked here until you close your browser. If you want to save them longer than that, you have to login and "favorite" them by clicking on the star.
+            </div>
+        {{/if}}
+
+    {{else}}
+
+        <div class="alert">
+          <h4 class="alert-heading">No Fiddles Found!</h4> Why not try a sample fiddle to get some wheels turning?
+        </div>
+
+    {{/if}}
+
+    </div>
+
+</form>

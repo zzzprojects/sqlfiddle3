@@ -1,0 +1,26 @@
+Markdown is useful for posting on sites like <a href="http://stackoverflow.com" target="_new">StackOverflow</a> and <a href="http://dba.stackexchange.com" target="_new">dba.se</a>. Also, those sites are great resources for getting help with database questions!
+<pre class="results">[SQL Fiddle][1]
+
+**{{schemaDef.dbType.full_name}} Schema Setup**:
+
+{{code_format schemaDef.ddl}}
+{{#each_with_index sets}}
+**Query {{add index 1}}**:
+
+{{code_format STATEMENT}}
+
+**[Results][{{add index 2}}]**:
+    {{#if this.RESULTS.DATA.length}}
+    |{{#each_simple_value_with_index this.RESULTS.COLUMNS}} {{result_display_padded ../this/RESULTS/COLUMNWIDTHS}} |{{/each_simple_value_with_index}}
+    |{{#each_simple_value_with_index this.RESULTS.COLUMNS}}{{divider_display ../this/RESULTS/COLUMNWIDTHS}}{{/each_simple_value_with_index}}{{#each this.RESULTS.DATA}}
+    |{{#each_simple_value_with_index this}} {{result_display_padded ../../this/RESULTS/COLUMNWIDTHS}} |{{/each_simple_value_with_index}}{{/each}}
+{{/if}}
+{{/each_with_index}}
+
+  [1]: http://sqlfiddle.com/#!{{schemaDef/dbType/id}}/{{schemaDef/short_code}}/{{id}}
+{{#each_with_index sets}}
+  [{{add index 2}}]: http://sqlfiddle.com/#!{{../schemaDef/dbType/id}}/{{../schemaDef/short_code}}/{{../id}}/{{index}}
+{{/each_with_index}}
+</pre>
+
+<span id="donationSuggestion">Did this query solve the problem? If so, consider donating $5 to help make sure SQL Fiddle will be here next time you need help with a database problem. Thanks!</span>

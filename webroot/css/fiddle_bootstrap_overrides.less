@@ -1,0 +1,172 @@
+
+// bug with dropdowns on touch devices, ref: http://stackoverflow.com/a/17632577/808921
+.dropdown-backdrop{
+    position: static;
+}
+
+/* Bootstrap overrides */
+
+.navbar .nav.pull-right { margin-left: 2px; }
+
+.nav-collapse>.nav { margin-right: 2px; }
+
+.navbar .brand {
+    padding-left: 10px;
+}
+
+.container-fluid .pull-right {
+    float: right !important;
+}
+
+
+.nav-collapse.in .pull-right {
+    float: left !important;
+}
+
+
+.navbar .btn-navbar {
+  background-color: #d6d6d6;
+  background-image: -moz-linear-gradient(top, #ffffff, #999999);
+  background-image: -ms-linear-gradient(top, #ffffff, #999999);
+  background-image: -webkit-gradient(linear, 0 0, 0 100%, from(#ffffff), to(#999999));
+  background-image: -webkit-linear-gradient(top, #ffffff, #999999);
+  background-image: -o-linear-gradient(top, #ffffff, #999999);
+  background-image: linear-gradient(top, #ffffff, #999999);
+  background-repeat: repeat-x;
+  filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#ffffff', endColorstr='#999999', GradientType=0);
+  border-color: #999999 #999999 #737373;
+  border-color: rgba(0, 0, 0, 0.1) rgba(0, 0, 0, 0.1) rgba(0, 0, 0, 0.25);
+  filter: progid:DXImageTransform.Microsoft.gradient(enabled = false);
+  -webkit-box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 1px 0 rgba(255, 255, 255, 0.075);
+  -moz-box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 1px 0 rgba(255, 255, 255, 0.075);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 1px 0 rgba(255, 255, 255, 0.075);
+}
+
+.btn-navbar:hover,
+.btn-navbar:active,
+.btn-navbar.active,
+.btn-navbar.disabled,
+.btn-navbar[disabled] {
+  background-color: #999999 !important;
+}
+.btn-navbar:active, .btn-navbar.active {
+  background-color: #808080 !important;
+}
+
+.navbar .brand {
+    white-space: nowrap;
+}
+
+.navbar {
+    color: black;
+}
+
+.navbar-inner {
+  background-color: #d6d6d6;
+  filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#ffffff', endColorstr='#999999', GradientType=0);
+  background-image: -moz-linear-gradient(top, #ffffff, #999999);
+  background-image: -ms-linear-gradient(top, #ffffff, #999999);
+  background-image: -webkit-gradient(linear, 0 0, 0 100%, from(#ffffff), to(#999999));
+  background-image: -webkit-linear-gradient(top, #ffffff, #999999);
+  background-image: -o-linear-gradient(top, #ffffff, #999999);
+  background-image: linear-gradient(top, #ffffff, #999999);
+
+}
+.navbar .nav > li > a {
+    color: #333333 !important;
+    text-shadow: none !important;
+  background-color: transparent !important;
+}
+
+.navbar .divider-vertical {
+    background-color: #999 !important;
+    border-right: 1px solid white !important;
+  border-left: none !important;
+  width: 1px;
+}
+.navbar .nav .active > a {
+  color: #999999 !important;
+  text-decoration: none !important;
+  background-color: rgba(0, 0, 0, 0.5) !important;
+  background-image: none !important;
+}
+.navbar .nav .active > a {
+  color: #eeeeee !important;
+}
+.navbar .nav .active > a:hover {
+  color: #eeeeee !important;
+}
+
+
+
+
+.navbar .nav > li > a i {
+  margin-right: 5px;
+}
+.navbar .brand {
+  color: #000000;
+  text-shadow: none !important;
+}
+
+.dropdown-menu a i {
+  margin-right: 5px;
+}
+.dropdown-toggle b.caret {
+  color: #999999;
+  opacity: .5;
+}
+.dropdown-menu.nav {
+  z-index:1050 !important;
+}
+.dropdown-menu.nav li > a:hover,
+.dropdown-menu.nav .active > a,
+.dropdown-menu.nav .active > a:hover {
+  color: #ffffff !important;
+  text-decoration: none !important;
+  background-color: #0088cc !important;
+}
+
+.form-horizontal .control-group {
+  margin-bottom: 6px;
+}
+
+.modal form {
+    margin:0;
+}
+
+.popover-inner {
+  min-width: 280px;
+  width: auto;
+  overflow-x: visible;
+  overflow-y: hidden;
+  max-height: 400px;
+}
+
+.popover-inner .alert {
+    max-width: 400px;
+    overflow-x: hidden;
+}
+
+
+#sidebar .well {
+  padding: 8px 0;
+}
+/*
+.navbar, #content {
+  min-width: 920px !important;
+}
+*/
+#content {
+  height: 100%;
+}
+#content .panel {
+  margin: 0;
+}
+#content .panel {
+  min-height: 125px;
+  height: 100%;
+  position: relative;
+}
+#content .panel form {
+  height: 100%;
+}

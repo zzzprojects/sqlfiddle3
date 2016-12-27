@@ -1,0 +1,14 @@
+FROM vertx/vertx3
+
+ENV VERTICLE_NAME sqlfiddle.js
+
+ENV VERTICLE_HOME /usr/verticles
+
+EXPOSE 8080
+
+COPY webroot $VERTICLE_HOME/webroot
+COPY $VERTICLE_NAME $VERTICLE_HOME/
+
+WORKDIR $VERTICLE_HOME
+ENTRYPOINT ["sh", "-c"]
+CMD ["vertx run $VERTICLE_NAME -cp $VERTICLE_HOME/*"]

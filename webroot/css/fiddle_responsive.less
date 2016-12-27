@@ -1,0 +1,61 @@
+@media (max-width:440px)
+{
+    #exit_fullscreen span, .helpTip {
+        display: none !important;
+    }
+}
+
+@media (min-width:480px) and (max-width:979px)
+{
+    #db_type_label_collapsed {
+        display: inline !important;
+    }
+}
+
+/*
+ *    These selectively disable the less-important nav bar elements, as the screen width shrinks
+ *     (but before we get to the collapsed nav bar view)
+ */
+
+@media (min-width:980px) and (max-width:1110px) { .nav-collapse .pull-right { display: none; } }
+@media (min-width:980px) and (max-width:1210px) { .nav-collapse .pull-right .optional { display: none; } }
+
+
+@media (max-width:767px)
+{
+    div.sql {
+        width: 100% !important;
+    }
+
+    .helpTip {
+        width: 180px !important;
+        height: 30% !important;
+    }
+
+}
+
+@media (min-width:768px) and (max-width:979px)
+{
+    .helpTip {
+        width: 100px !important;
+        height: 50% !important;
+    }
+}
+
+@media (max-width:979px)
+{
+    body {
+      padding-top: 0px !important;
+    }
+
+
+    textarea.fullscreen {
+        top: 50px !important;
+    }
+
+    #paypal_donate {
+        padding-left:15px;
+    }
+
+
+}

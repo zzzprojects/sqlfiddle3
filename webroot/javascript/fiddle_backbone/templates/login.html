@@ -1,0 +1,22 @@
+    <form class="form-horizontal login">
+        <input type="hidden" name="hash" value="" id="hash">
+        <div class="modal-header">
+            <a class="close" data-dismiss="modal">x</a>
+            <h3>Login to SQL Fiddle</h3>
+        </div>
+        <div class="modal-body">
+            <div class="control-group">
+                <label class="control-label">Choose OpenID Connect Authentication Provider: </label>
+                <div class="controls">
+
+                    {{#each resolvers}}
+
+                        <input type="image" src="{{icon}}" value="{{name}}" />
+
+                    {{/each}}
+
+                </div>
+            </div>
+        </div>
+
+    </form>

@@ -1,0 +1,14 @@
+a.executionPlanLink, .btn-navbar, .action_buttons, #hosting {
+    display: none !important;
+}
+
+      .CodeMirror-scroll, #browser {
+        height: auto !important;
+        overflow-y: hidden;
+        overflow-x: auto;
+        width: 100%;
+      }
+
+      #schema-output {
+          height: auto !important;
+      }

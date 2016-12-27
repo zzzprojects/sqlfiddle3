@@ -1,0 +1,8 @@
+        <a class="dropdown-toggle" data-toggle="dropdown" href="#">
+            {{selectedFullName}} <b class="caret"></b>
+        </a>
+        <ul class="dropdown-menu">
+            {{#each dbTypes}}
+            <li db_type_id="{{this.id}}" class="{{this.className}}{{#unless show}} hidden{{/unless}}"><a href="#"><i class="icon-tag"></i>{{this.full_name}}</a></li>
+            {{/each}}
+        </ul>
