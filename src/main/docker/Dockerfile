@@ -1,6 +1,6 @@
 FROM vertx/vertx3
 
-ENV VERTICLE_NAME sqlfiddle.js
+ENV VERTICLE_NAME sqlfiddle.groovy
 
 ENV VERTICLE_HOME /usr/verticles
 
