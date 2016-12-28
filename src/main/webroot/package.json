@@ -5,10 +5,11 @@
   "license": "MIT",
   "version": "3.0.0",
   "devDependencies": {
-    "grunt": "~0.4.2",
-    "grunt-contrib-watch": "~0.5.3",
     "grunt-contrib-less": "~0.11",
     "grunt-contrib-requirejs": "~0.4.4",
+    "grunt-contrib-watch": "~0.5.3",
+    "grunt": "~0.4.2",
+    "grunt-cli": "1.2.0",
     "almond": "0.3.0",
     "requirejs-text": "2.0.12",
     "sql.js": "0.4.0",

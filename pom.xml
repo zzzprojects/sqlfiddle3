@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+ xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <artifactId>www-sqlfiddle-com</artifactId>
+    <groupId>sqlfiddle</groupId>
+    <version>3.0</version>
+    <packaging>pom</packaging>
+    <name>SQL Fiddle file assembly</name>
+
+    <properties>
+        <node.install.directory>${project.parent.basedir}</node.install.directory>
+        <grunt.task>build</grunt.task>
+    </properties>
+
+    <build>
+        <finalName>sqlfiddle</finalName>
+
+        <plugins>
+
+            <plugin>
+              <artifactId>maven-resources-plugin</artifactId>
+              <version>3.0.2</version>
+              <executions>
+                <execution>
+                  <id>copy-resources</id>
+                  <phase>validate</phase>
+                  <goals>
+                    <goal>copy-resources</goal>
+                  </goals>
+                  <configuration>
+                    <outputDirectory>${basedir}/target/docker/webroot</outputDirectory>
+                    <resources>
+                      <resource>
+                        <directory>src/main/webroot</directory>
+                        <filtering>true</filtering>
+                        <excludes>
+                            <exclude>src/main/webroot/node_modules</exclude>
+                        </excludes>
+                      </resource>
+                    </resources>
+                  </configuration>
+                </execution>
+              </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>com.github.eirslett</groupId>
+                <artifactId>frontend-maven-plugin</artifactId>
+                <version>0.0.28</version>
+                <configuration>
+                    <installDirectory>${node.install.directory}</installDirectory>
+                    <workingDirectory>${basedir}/target/docker/webroot</workingDirectory>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>install-node-and-npm</id>
+                        <goals>
+                            <goal>install-node-and-npm</goal>
+                        </goals>
+                        <phase>initialize</phase>
+                        <configuration>
+                            <nodeVersion>v0.12.4</nodeVersion>
+                            <npmVersion>2.10.1</npmVersion>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>npm-install</id>
+                        <goals>
+                            <goal>npm</goal>
+                        </goals>
+                        <phase>initialize</phase>
+                        <configuration>
+                            <arguments>install</arguments>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>grunt</id>
+                        <goals>
+                            <goal>grunt</goal>
+                        </goals>
+                        <phase>compile</phase>
+                        <configuration>
+                            <arguments>${grunt.task}</arguments>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>com.spotify</groupId>
+                <artifactId>docker-maven-plugin</artifactId>
+                <version>0.2.8</version>
+                <executions>
+                  <execution>
+                    <id>docker</id>
+                    <phase>package</phase>
+                    <goals>
+                      <goal>build</goal>
+                    </goals>
+                  </execution>
+                </executions>
+                <configuration>
+                  <dockerDirectory>${project.basedir}/src/main/docker</dockerDirectory>
+                  <!-- Configure the image name -->
+                  <imageName>sqlfiddle:appServer</imageName>
+                  <resources>
+                    <resource>
+                      <targetPath>/</targetPath>
+                      <directory>src/main/verticles</directory>
+                    </resource>
+                </resources>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+</project>
