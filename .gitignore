@@ -1,11 +1,1 @@
-node_modules
-target
-src/main/webroot/node_modules
-src/main/webroot/javascript/*.js.map
-src/main/webroot/javascript/main_min.js
-src/main/webroot/javascript/oauth_min.js
-src/main/webroot/css/fiddle.css
-src/main/webroot/css/fiddle_responsive.css
-src/main/webroot/css/fiddle_bootstrap_overrides.css
-src/main/webroot/css/styles_min.css
-src/main/webroot/css/print_min.css
+appServer/target
