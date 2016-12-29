@@ -49,7 +49,7 @@
                                 <artifactItem>
                                     <groupId>org.postgresql</groupId>
                                     <artifactId>postgresql</artifactId>
-                                    <version>9.4.1212</version>
+                                    <version>9.4-1206-jdbc42</version>
                                     <type>jar</type>
                                     <overWrite>false</overWrite>
                                     <outputDirectory>${project.build.directory}/docker/lib</outputDirectory>
