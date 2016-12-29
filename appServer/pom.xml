@@ -94,7 +94,6 @@
                 <version>0.0.28</version>
                 <configuration>
                     <installDirectory>${node.install.directory}</installDirectory>
-                    <workingDirectory>${basedir}/target/docker/webroot</workingDirectory>
                 </configuration>
                 <executions>
                     <execution>

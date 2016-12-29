@@ -1,9 +1,38 @@
 module.exports = function(grunt) {
 
-    var srcFolder = './',
-        targetFolder = './';
+    var srcFolder = 'src/main/webroot/',
+        targetFolder = 'target/docker/webroot/';
 
     grunt.initConfig({
+        sync: {
+            node_modules: {
+                files: [{
+                    cwd     : "node_modules",
+                    src     : ['**/*'],
+                    dest    : targetFolder + "node_modules",
+                    flatten : false,
+                    expand  : true
+                }]
+            },
+            webroot: {
+                files: [{
+                    cwd     : srcFolder,
+                    src     : ['**/*'],
+                    dest    : targetFolder,
+                    flatten : false,
+                    expand  : true
+                }]
+            },
+            verticles: {
+                files: [{
+                    cwd     : "src/main/verticles",
+                    src     : ['**/*'],
+                    dest    : "target/docker",
+                    flatten : false,
+                    expand  : true
+                }]
+            }
+        },
         less: {
             production: {
                 files: [{
@@ -21,11 +50,11 @@ module.exports = function(grunt) {
         requirejs: {
             minifyMainJS: {
                 options: {
-                    baseUrl: srcFolder + "javascript",
-                    mainConfigFile: srcFolder + "javascript/main.js",
+                    baseUrl: targetFolder + "javascript",
+                    mainConfigFile: targetFolder + "javascript/main.js",
                     include: [
-                        targetFolder + "../node_modules/almond/almond",
-                        targetFolder + "main"
+                        "../node_modules/almond/almond",
+                        "main"
                     ],
                     optimize: "uglify2",
                     generateSourceMaps: true,
@@ -35,11 +64,11 @@ module.exports = function(grunt) {
             },
             minifyOAuthJS: {
                 options: {
-                    baseUrl: srcFolder + "javascript",
-                    mainConfigFile: srcFolder + "javascript/oauth.js",
+                    baseUrl: targetFolder + "javascript",
+                    mainConfigFile: targetFolder + "javascript/oauth.js",
                     include: [
-                        targetFolder + "../node_modules/almond/almond",
-                        targetFolder + "oauth"
+                        "../node_modules/almond/almond",
+                        "oauth"
                     ],
                     optimize: "uglify2",
                     generateSourceMaps: true,
@@ -50,14 +79,14 @@ module.exports = function(grunt) {
             minifyMainCSS: {
                 options: {
                     optimizeCss: 'standard',
-                    cssIn: srcFolder + 'css/styles.css',
+                    cssIn: targetFolder + 'css/styles.css',
                     out: targetFolder + 'css/styles_min.css'
                 }
             },
             minifyPrintCSS: {
                 options: {
                     optimizeCss: 'standard',
-                    cssIn: srcFolder + 'css/print.css',
+                    cssIn: targetFolder + 'css/print.css',
                     out: targetFolder + 'css/print_min.css'
                 }
             }
@@ -65,20 +94,25 @@ module.exports = function(grunt) {
         watch: {
             copyUIJS: {
                 files: [srcFolder + 'javascript/**/*', "!" + srcFolder + 'javascript/*_min.js*'],
-                tasks: ['requirejs:minifyMainJS', 'requirejs:minifyOAuthJS' ]
+                tasks: ['sync:webroot', 'requirejs:minifyMainJS', 'requirejs:minifyOAuthJS' ]
             },
             copyLESS: {
                 files: [srcFolder + 'css/*.less', srcFolder + 'css/*.css', "!" + srcFolder + 'css/*_min.css',],
-                tasks: [ 'less', 'requirejs:minifyMainCSS', 'requirejs:minifyPrintCSS' ]
+                tasks: ['sync:webroot', 'less', 'requirejs:minifyMainCSS', 'requirejs:minifyPrintCSS' ]
+            },
+            copyVerticles: {
+                files: ["src/main/verticles/**"],
+                tasks: ['sync:verticles']
             }
         }
     });
 
     grunt.loadNpmTasks('grunt-contrib-watch');
+    grunt.loadNpmTasks('grunt-sync');
     grunt.loadNpmTasks('grunt-contrib-requirejs');
     grunt.loadNpmTasks('grunt-contrib-less');
 
-    grunt.registerTask('build', ['less', 'requirejs']);
+    grunt.registerTask('build', ['sync:node_modules', 'less', 'requirejs']);
     grunt.registerTask('default', ['build', 'watch']);
 
 };
