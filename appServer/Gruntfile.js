@@ -112,7 +112,7 @@ module.exports = function(grunt) {
     grunt.loadNpmTasks('grunt-contrib-requirejs');
     grunt.loadNpmTasks('grunt-contrib-less');
 
-    grunt.registerTask('build', ['sync:node_modules', 'less', 'requirejs']);
+    grunt.registerTask('build', ['sync:verticles', 'sync:node_modules', 'less', 'requirejs']);
     grunt.registerTask('default', ['build', 'watch']);
 
 };
