@@ -1,0 +1,12 @@
+version: '2'
+services:
+  appServer:
+    image: sqlfiddle:appServer
+    ports:
+    - "8080:8080"
+    links:
+    - appDatabase
+  appDatabase:
+    build:
+      context: ./appDatabase
+    image: sqlfiddle:appDatabase

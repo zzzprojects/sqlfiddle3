@@ -3,3 +3,7 @@
 This version of the system is intended to make use of Docker for the different systems (app server, app database, fiddle databases, etc...)
 
 It is also implemented with Vert.x in the application tier.
+
+To get running:
+
+    cd appServer/ && mvn clean package && cd .. && docker-compose up -d

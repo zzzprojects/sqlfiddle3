@@ -8,7 +8,7 @@ import io.vertx.groovy.ext.jdbc.JDBCClient
 def server = vertx.createHttpServer()
 def router = Router.router(vertx)
 def jdbcConfig = [
-    url: "jdbc:postgresql://appdb:5432/sqlfiddle",
+    url: "jdbc:postgresql://appDatabase:5432/sqlfiddle",
     driver_class: "org.postgresql.Driver",
     user: "postgres",
     password: "password"
