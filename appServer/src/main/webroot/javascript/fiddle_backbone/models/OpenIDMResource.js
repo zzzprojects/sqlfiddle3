@@ -21,7 +21,7 @@ define(["jquery"], function ($) {
                 data: args.data
             }).fail(function (jqXHR, textStatus, errorThrown) {
                 if (jqXHR.status !== 413) {
-                    alert("Oops! Something went wrong. Try it again and if this keeps happening, email admin@sqlfiddle.com about it.");
+                    //alert("Oops! Something went wrong. Try it again and if this keeps happening, email admin@sqlfiddle.com about it.");
                 }
             });
         }
