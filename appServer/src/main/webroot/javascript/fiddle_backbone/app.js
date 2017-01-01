@@ -33,7 +33,7 @@ var obj = {
 
         var router = {};
 
-        var oidc = new OpenIDConnectProviers();
+        //var oidc = new OpenIDConnectProviers();
 
         var myFiddleHistory = new MyFiddleHistory();
 
@@ -63,22 +63,22 @@ var obj = {
             output_el: $("#output")
         });
 
-        var loginDialog = new LoginDialog({
+/*        var loginDialog = new LoginDialog({
             el: $("#loginModal")[0],
             collection: oidc
         });
-
+*/
         var myFiddleDialog = new MyFiddleDialog({
             el: $("#myFiddlesModal")[0],
             collection: myFiddleHistory
         });
-
+/*
         var userOptions = new UserOptions({
             el: $("#userOptions .dropdown-menu")[0],
             oidc: oidc,
             myFiddleDialog: myFiddleDialog
         });
-
+*/
         /* UI Changes */
         dbTypes.on("change", function () {
         // see also the router function defined below that also binds to this event
@@ -239,12 +239,12 @@ var obj = {
             schemaDefView.render();
             queryView.render();
         });
-
+/*
         oidc.on("reset", function () {
             // note that this isn't visible until the login button is clicked
             loginDialog.render();
         });
-
+*/
         myFiddleHistory.on("change reset remove", myFiddleHistory.sync, myFiddleHistory);
 
 
@@ -323,7 +323,7 @@ var obj = {
 
         dbTypes.fetch();
 
-        openidconnect.getLoggedUserDetails().then(function (userInfo) {
+        /*openidconnect.getLoggedUserDetails().then(function (userInfo) {
             if (userInfo) {
                 userOptions.renderAuthenticated(userInfo);
                 myFiddleDialog.setAnonymous(false);
@@ -334,7 +334,7 @@ var obj = {
         }, function () {
             userOptions.renderAnonymous();
             myFiddleDialog.setAnonymous(true);
-        });
+        });*/
 
         _.extend(this, {
                 dbTypes: dbTypes,
