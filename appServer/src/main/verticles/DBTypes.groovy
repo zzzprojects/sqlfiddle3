@@ -3,7 +3,7 @@ class DBTypes {
         DatabaseClient.getConnection(vertx, {connection ->
             connection.query("""
             SELECT
-                d.id,
+                d.id as db_type_id,
                 d.context,
                 d.full_name,
                 d.simple_name,
