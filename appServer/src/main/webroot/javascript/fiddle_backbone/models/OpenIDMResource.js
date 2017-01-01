@@ -13,7 +13,7 @@ define(["jquery"], function ($) {
 
             return $.ajax({
                 type: args.type,
-                url: args.url,
+                url: '/backend' + args.url,
                 headers: $.extend({}, args.headers, {
                     "Content-Type": "application/json"
                 }),
