@@ -1,4 +1,5 @@
 import io.vertx.groovy.ext.jdbc.JDBCClient
+import io.vertx.core.impl.FutureImpl
 
 class DatabaseClient {
     static private def jdbcConfig = [
@@ -19,4 +20,38 @@ class DatabaseClient {
                 }
             })
     }
+
+    static def singleRead(vertx, query, params, fn) {
+        getConnection(vertx, {connection ->
+            connection.queryWithParams(query, params, {
+                def queryObj = queryResultAsBasicObj(it)
+                if (queryObj.result && queryObj.result.size() == 1) {
+                    fn(queryObj.result[0])
+                } else {
+                    fn(null)
+                }
+                connection.close()
+            })
+        })
+    }
+
+    static def queryResultAsBasicObj(FutureImpl queryResult) {
+        if (queryResult.succeeded()) {
+            def columnNames = queryResult.result().columnNames
+            return [
+                    result: queryResult.result().results.collect { row ->
+                        def valueMap = [:]
+                        columnNames.eachWithIndex { col, pos ->
+                            valueMap[col] = row[pos]
+                        }
+                        return valueMap
+                    }
+                ]
+        } else {
+            return [
+                message: queryResult.cause().getMessage()
+            ]
+        }
+    }
+
 }

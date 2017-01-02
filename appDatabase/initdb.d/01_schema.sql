@@ -9,28 +9,28 @@ SET check_function_bodies = false;
 SET client_min_messages = warning;
 
 --
--- Name: plpgsql; Type: EXTENSION; Schema: -; Owner: 
+-- Name: plpgsql; Type: EXTENSION; Schema: -; Owner:
 --
 
 CREATE EXTENSION IF NOT EXISTS plpgsql WITH SCHEMA pg_catalog;
 
 
 --
--- Name: EXTENSION plpgsql; Type: COMMENT; Schema: -; Owner: 
+-- Name: EXTENSION plpgsql; Type: COMMENT; Schema: -; Owner:
 --
 
 COMMENT ON EXTENSION plpgsql IS 'PL/pgSQL procedural language';
 
 
 --
--- Name: uuid-ossp; Type: EXTENSION; Schema: -; Owner: 
+-- Name: uuid-ossp; Type: EXTENSION; Schema: -; Owner:
 --
 
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp" WITH SCHEMA public;
 
 
 --
--- Name: EXTENSION "uuid-ossp"; Type: COMMENT; Schema: -; Owner: 
+-- Name: EXTENSION "uuid-ossp"; Type: COMMENT; Schema: -; Owner:
 --
 
 COMMENT ON EXTENSION "uuid-ossp" IS 'generate universally unique identifiers (UUIDs)';
@@ -43,7 +43,7 @@ SET default_tablespace = '';
 SET default_with_oids = false;
 
 --
--- Name: db_types; Type: TABLE; Schema: public; Owner: postgres; Tablespace: 
+-- Name: db_types; Type: TABLE; Schema: public; Owner: postgres; Tablespace:
 --
 
 CREATE TABLE db_types (
@@ -91,7 +91,7 @@ ALTER SEQUENCE db_types_id_seq OWNED BY db_types.id;
 
 
 --
--- Name: hosts; Type: TABLE; Schema: public; Owner: postgres; Tablespace: 
+-- Name: hosts; Type: TABLE; Schema: public; Owner: postgres; Tablespace:
 --
 
 CREATE TABLE hosts (
@@ -128,7 +128,7 @@ ALTER SEQUENCE hosts_id_seq OWNED BY hosts.id;
 
 
 --
--- Name: queries; Type: TABLE; Schema: public; Owner: postgres; Tablespace: 
+-- Name: queries; Type: TABLE; Schema: public; Owner: postgres; Tablespace:
 --
 
 CREATE TABLE queries (
@@ -144,7 +144,7 @@ CREATE TABLE queries (
 ALTER TABLE public.queries OWNER TO postgres;
 
 --
--- Name: query_sets; Type: TABLE; Schema: public; Owner: postgres; Tablespace: 
+-- Name: query_sets; Type: TABLE; Schema: public; Owner: postgres; Tablespace:
 --
 
 CREATE TABLE query_sets (
@@ -164,7 +164,7 @@ CREATE TABLE query_sets (
 ALTER TABLE public.query_sets OWNER TO postgres;
 
 --
--- Name: schema_defs; Type: TABLE; Schema: public; Owner: postgres; Tablespace: 
+-- Name: schema_defs; Type: TABLE; Schema: public; Owner: postgres; Tablespace:
 --
 
 CREATE TABLE schema_defs (
@@ -206,7 +206,7 @@ ALTER SEQUENCE schema_defs_id_seq OWNED BY schema_defs.id;
 
 
 --
--- Name: user_fiddles; Type: TABLE; Schema: public; Owner: postgres; Tablespace: 
+-- Name: user_fiddles; Type: TABLE; Schema: public; Owner: postgres; Tablespace:
 --
 
 CREATE TABLE user_fiddles (
@@ -244,7 +244,7 @@ ALTER SEQUENCE user_fiddles_id_seq OWNED BY user_fiddles.id;
 
 
 --
--- Name: users; Type: TABLE; Schema: public; Owner: postgres; Tablespace: 
+-- Name: users; Type: TABLE; Schema: public; Owner: postgres; Tablespace:
 --
 
 CREATE TABLE users (
@@ -314,7 +314,7 @@ ALTER TABLE ONLY users ALTER COLUMN id SET DEFAULT nextval('users_id_seq'::regcl
 
 
 --
--- Name: db_types_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace: 
+-- Name: db_types_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace:
 --
 
 ALTER TABLE ONLY db_types
@@ -322,7 +322,7 @@ ALTER TABLE ONLY db_types
 
 
 --
--- Name: hosts_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace: 
+-- Name: hosts_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace:
 --
 
 ALTER TABLE ONLY hosts
@@ -330,7 +330,7 @@ ALTER TABLE ONLY hosts
 
 
 --
--- Name: queries_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace: 
+-- Name: queries_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace:
 --
 
 ALTER TABLE ONLY queries
@@ -338,7 +338,7 @@ ALTER TABLE ONLY queries
 
 
 --
--- Name: query_sets_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace: 
+-- Name: query_sets_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace:
 --
 
 ALTER TABLE ONLY query_sets
@@ -346,7 +346,7 @@ ALTER TABLE ONLY query_sets
 
 
 --
--- Name: schema_defs_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace: 
+-- Name: schema_defs_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace:
 --
 
 ALTER TABLE ONLY schema_defs
@@ -354,7 +354,7 @@ ALTER TABLE ONLY schema_defs
 
 
 --
--- Name: user_fiddles_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace: 
+-- Name: user_fiddles_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace:
 --
 
 ALTER TABLE ONLY user_fiddles
@@ -362,7 +362,7 @@ ALTER TABLE ONLY user_fiddles
 
 
 --
--- Name: users_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace: 
+-- Name: users_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace:
 --
 
 ALTER TABLE ONLY users
@@ -370,65 +370,65 @@ ALTER TABLE ONLY users
 
 
 --
--- Name: query_author; Type: INDEX; Schema: public; Owner: postgres; Tablespace: 
+-- Name: query_author; Type: INDEX; Schema: public; Owner: postgres; Tablespace:
 --
 
 CREATE INDEX query_author ON queries USING btree (author_id);
 
 
 --
--- Name: query_md5s; Type: INDEX; Schema: public; Owner: postgres; Tablespace: 
+-- Name: query_md5s; Type: INDEX; Schema: public; Owner: postgres; Tablespace:
 --
 
 CREATE INDEX query_md5s ON queries USING btree (md5, schema_def_id);
 
 
 --
--- Name: schema_md5s; Type: INDEX; Schema: public; Owner: postgres; Tablespace: 
+-- Name: schema_md5s; Type: INDEX; Schema: public; Owner: postgres; Tablespace:
 --
 
 CREATE INDEX schema_md5s ON schema_defs USING btree (md5, db_type_id);
 
 
 --
--- Name: schema_owner; Type: INDEX; Schema: public; Owner: postgres; Tablespace: 
+-- Name: schema_owner; Type: INDEX; Schema: public; Owner: postgres; Tablespace:
 --
 
 CREATE INDEX schema_owner ON schema_defs USING btree (owner_id);
 
 --
--- Name: schema_last_used; Type: INDEX; Schema: public; Owner: postgres; Tablespace: 
+-- Name: schema_last_used; Type: INDEX; Schema: public; Owner: postgres; Tablespace:
 --
 
 CREATE INDEX schema_last_used ON schema_defs USING btree (last_used);
 
 --
--- Name: schema_short_codes; Type: INDEX; Schema: public; Owner: postgres; Tablespace: 
+-- Name: schema_short_codes; Type: INDEX; Schema: public; Owner: postgres; Tablespace:
 --
 
-CREATE UNIQUE INDEX schema_short_codes ON schema_defs USING btree (short_code, db_type_id);
+CREATE UNIQUE INDEX schema_short_codes ON schema_defs USING btree (short_code varchar_pattern_ops, db_type_id);
 
 
-CREATE INDEX schema_defs_deprovision ON schema_defs (short_code, db_type_id) 
+CREATE INDEX schema_defs_deprovision ON schema_defs (short_code, db_type_id)
 WHERE deprovision = 0;
 
 
 --
--- Name: user_fiddles_user_id; Type: INDEX; Schema: public; Owner: postgres; Tablespace: 
+-- Name: user_fiddles_user_id; Type: INDEX; Schema: public; Owner: postgres; Tablespace:
 --
 
 CREATE INDEX user_fiddles_user_id ON user_fiddles USING btree (user_id);
 
 
 --
--- Name: user_fiddles_user_schema_query_id; Type: INDEX; Schema: public; Owner: postgres; Tablespace: 
+-- Name: user_fiddles_user_schema_query_id; Type: INDEX; Schema: public; Owner: postgres; Tablespace:
 --
 
 CREATE INDEX user_fiddles_user_schema_query_id ON user_fiddles USING btree (user_id, schema_def_id, query_id);
 
 
 --
--- Name: user_identities; Type: INDEX; Schema: public; Owner: postgres; Tablespace: 
+-- Name: user_identities; Type: INDEX; Schema: public; Owner: postgres; Tablespace:
 --
 
 CREATE UNIQUE INDEX user_identities ON users USING btree (issuer,subject);
@@ -489,4 +489,3 @@ GRANT ALL ON SCHEMA public TO PUBLIC;
 --
 -- PostgreSQL database dump complete
 --
-
