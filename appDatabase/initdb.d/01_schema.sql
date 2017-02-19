@@ -408,6 +408,8 @@ CREATE INDEX schema_last_used ON schema_defs USING btree (last_used);
 
 CREATE UNIQUE INDEX schema_short_codes ON schema_defs USING btree (short_code varchar_pattern_ops, db_type_id);
 
+CREATE INDEX schema_defs_currenthosts ON schema_defs (current_host_id)
+WHERE current_host_id IS NOT NULL;
 
 CREATE INDEX schema_defs_deprovision ON schema_defs (short_code, db_type_id)
 WHERE deprovision = 0;
