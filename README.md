@@ -7,3 +7,17 @@ It is also implemented with Vert.x in the application tier.
 To get running:
 
     cd appServer/ && mvn clean package && cd .. && docker-compose up -d
+
+If building on a Mac, be sure to prep docker first:
+
+    docker-machine start
+    eval $(docker-machine env)
+
+
+To do development in a local environment (requires local install of PostgreSQL and Vert.x):
+
+    cd appServer/
+    mvn clean package
+    grunt &
+    cd target/docker
+    vertx run sqlfiddle.groovy
