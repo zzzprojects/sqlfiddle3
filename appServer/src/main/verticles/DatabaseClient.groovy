@@ -24,13 +24,13 @@ class DatabaseClient {
     static def singleRead(vertx, query, params, fn) {
         getConnection(vertx, {connection ->
             connection.queryWithParams(query, params, {
+                connection.close()
                 def queryObj = queryResultAsBasicObj(it)
                 if (queryObj.result && queryObj.result.size() == 1) {
                     fn(queryObj.result[0])
                 } else {
                     fn(null)
                 }
-                connection.close()
             })
         })
     }
