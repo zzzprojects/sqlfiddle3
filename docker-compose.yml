@@ -6,7 +6,12 @@ services:
     - "8080:8080"
     links:
     - appDatabase
+    - postgresqlHost
   appDatabase:
     build:
       context: ./appDatabase
     image: sqlfiddle:appDatabase
+  postgresqlHost:
+    build:
+      context: ./postgresqlHost
+    image: sqlfiddle:postgresqlHost
