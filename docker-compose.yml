@@ -6,17 +6,17 @@ services:
     - "8080:8080"
     links:
     - appDatabase
-    - postgresqlHost
-    - mysqlHost
+    - postgresql93Host
+    - mysql56Host
   appDatabase:
     build:
       context: ./appDatabase
     image: sqlfiddle:appDatabase
-  postgresqlHost:
+  postgresql93Host:
     build:
-      context: ./postgresqlHost
-    image: sqlfiddle:postgresqlHost
-  mysqlHost:
+      context: ./postgresql93Host
+    image: sqlfiddle:postgresql93Host
+  mysql56Host:
     build:
-      context: ./mysqlHost
-    image: sqlfiddle:mysqlHost
+      context: ./mysql56Host
+    image: sqlfiddle:mysql56Host

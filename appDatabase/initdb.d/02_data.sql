@@ -44,8 +44,8 @@ SELECT pg_catalog.setval('db_types_id_seq', 16, true);
 --
 
 COPY hosts (id, db_type_id, jdbc_url_template, default_database, admin_username, admin_password) FROM stdin;
-1	15	jdbc:postgresql://postgresqlHost:5432/#databaseName#	postgres	postgres	password
-2	9	jdbc:mysql://mysqlHost:3306/#databaseName#?allowMultiQueries=true&useLocalTransactionState=true&useUnicode=true&characterEncoding=UTF-8	mysql	root	password
+1	15	jdbc:postgresql://postgresql93Host:5432/#databaseName#	postgres	postgres	password
+2	9	jdbc:mysql://mysql56Host:3306/#databaseName#?allowMultiQueries=true&useLocalTransactionState=true&useUnicode=true&characterEncoding=UTF-8	mysql	root	password
 3	4	jdbc:oracle:thin:@//ORACLE11G_HOST:1521/xe	XE	system	password
 4	6	jdbc:jtds:sqlserver://SQLSERVER2014_HOST:1433/#databaseName#	master	sa	SQLServerPassword
 5	2	jdbc:mysql://MYSQL55_HOST:3306/#databaseName#?allowMultiQueries=true&useLocalTransactionState=true&useUnicode=true&characterEncoding=UTF-8	mysql	root	password
