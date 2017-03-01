@@ -1,4 +1,3 @@
-import io.vertx.groovy.core.Vertx
 import io.vertx.groovy.ext.web.handler.BodyHandler
 import io.vertx.groovy.ext.web.handler.StaticHandler
 import io.vertx.groovy.ext.web.Router
@@ -15,8 +14,7 @@ router.route("/backend/dbTypes").handler({ routingContext ->
 })
 
 router.post("/backend/createSchema").handler({ routingContext ->
-    def schemDef = new SchemaDef(vertx);
-    schemDef.processCreateRequest(routingContext.getBodyAsJson(), { response ->
+    (new SchemaDef(vertx)).processCreateRequest(routingContext.getBodyAsJson(), { response ->
         RESTUtils.writeJSONResponse(routingContext, response)
     })
 })
