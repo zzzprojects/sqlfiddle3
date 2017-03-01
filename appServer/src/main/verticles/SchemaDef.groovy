@@ -2,6 +2,7 @@ import java.security.MessageDigest
 import io.vertx.core.json.JsonObject
 import io.vertx.groovy.ext.jdbc.JDBCClient
 import java.util.regex.Pattern
+import java.sql.SQLException
 
 class SchemaDef {
     private def vertx
@@ -68,7 +69,7 @@ class SchemaDef {
     }
 
 
-    private def getUniqueShortCode(db_type_id, md5hash, fn) {
+    private getUniqueShortCode(db_type_id, md5hash, fn) {
         def short_code = md5hash.substring(0,5)
 
         DatabaseClient.getConnection(this.vertx, {connection ->
@@ -104,7 +105,7 @@ class SchemaDef {
 
     }
 
-    private def create(createAttributes, fn) {
+    private create(createAttributes, fn) {
         DatabaseClient.getConnection(this.vertx, {connection ->
             connection.updateWithParams("""
             INSERT INTO
@@ -138,7 +139,7 @@ class SchemaDef {
         })
     }
 
-    private def registerSchema(content, md5hash, dbDetails, fn) {
+    private registerSchema(content, md5hash, dbDetails, fn) {
 
         this.getUniqueShortCode(content.db_type_id, md5hash, { short_code ->
             // if the dbType context is "host", then we have to try to create the database in our
@@ -163,6 +164,11 @@ class SchemaDef {
                             short_code: short_code
                         ])
                     })
+                },
+                {
+                    fn([
+                        "error": it
+                    ])
                 })
             } else { // context is not in our backend, so don't need to attempt to build it first
                 this.create([
@@ -182,7 +188,7 @@ class SchemaDef {
         })
     }
 
-    private def findAvailableHost(db_type_id, fn) {
+    private findAvailableHost(db_type_id, fn) {
         DatabaseClient.singleRead(this.vertx, """
             SELECT
                 h.id,
@@ -215,7 +221,7 @@ class SchemaDef {
         """, [db_type_id], fn)
     }
 
-    private def getHostConnection(connectionDetails, connectionName, fn) {
+    private getHostConnection(connectionDetails, connectionName, fn) {
         JDBCClient
             .createShared(this.vertx, connectionDetails, connectionName)
             .getConnection({ hostConnectionHandler ->
@@ -229,21 +235,19 @@ class SchemaDef {
             })
     }
 
-    private def executeSerially(connection, statements, fn) {
+    private executeSerially(connection, statements, successHandler, errorHandler) {
         def executeHandler
         executeHandler = { statementQueue ->
             if (statementQueue.size() == 0) {
-                fn()
+                successHandler()
             } else {
                 def statement = statementQueue.get(0)
                 statementQueue.remove(0)
-                println "EXECUTING STATEMENT:" + statement
                 connection.execute(statement, {
                     if (it.succeeded()) {
                         executeHandler(statementQueue)
                     } else {
-                        println it.cause().getMessage()
-                        throw it
+                        errorHandler(it.throwable.getMessage())
                     }
                 })
             }
@@ -251,7 +255,7 @@ class SchemaDef {
         executeHandler(statements)
     }
 
-    private def executeScriptTemplate(hostConnection, script_template, batch_separator, databaseName, fn) {
+    private executeScriptTemplate(hostConnection, script_template, batch_separator, databaseName, fn) {
         String delimiter = (char) 7
         String newline = (char) 10
         String carrageReturn = (char) 13
@@ -262,10 +266,13 @@ class SchemaDef {
         if (batch_separator && batch_separator.size()) {
             script = script.replaceAll(Pattern.compile(newline + batch_separator + carrageReturn + "?(" + newline + '|$)', Pattern.CASE_INSENSITIVE), delimiter)
         }
-        this.executeSerially(hostConnection, script.tokenize(delimiter), fn)
+        this.executeSerially(hostConnection, script.tokenize(delimiter), fn, {
+            // script templates normally won't throw errors
+            throw it
+        })
     }
 
-    private def buildRunningDatabase(dbDetails, short_code, ddl, statement_separator, fn) {
+    private buildRunningDatabase(dbDetails, short_code, ddl, statement_separator, successHandler, errorHandler) {
         // find a backend host capable of running our ddl...
         findAvailableHost(dbDetails.db_type_id, { host ->
 
@@ -301,55 +308,55 @@ class SchemaDef {
                             ],
                             "fiddle_" + databaseName, // connection pool name
                             { hostConnection ->
-                                try {
+                                // timeout queries in case someone is trying to run something crazy
+                                // commented-out because it doesn't seem to work...?
+                                //hostConnection.setQueryTimeout((int)10)
 
-                                    // timeout queries in case someone is trying to run something crazy
-                                    // commented-out because it doesn't seem to work...?
-                                    //hostConnection.setQueryTimeout((int)10)
+                                // consider refactoring below code to use executeScriptTemplate
+                                String delimiter = (char) 7
+                                String newline = (char) 10
+                                String carrageReturn = (char) 13
 
-                                    // consider refactoring below code to use executeScriptTemplate
-                                    String delimiter = (char) 7
-                                    String newline = (char) 10
-                                    String carrageReturn = (char) 13
+                                // run the provided ddl to setup the database environment...
+                                if (host.batch_separator && host.batch_separator.size()) {
+                                    ddl = ddl.replaceAll(Pattern.compile(newline + host.batch_separator + carrageReturn + "?(" + newline + '|$)', Pattern.CASE_INSENSITIVE), statement_separator)
+                                }
 
-                                    // run the provided ddl to setup the database environment...
-                                    if (host.batch_separator && host.batch_separator.size()) {
-                                        ddl = ddl.replaceAll(Pattern.compile(newline + host.batch_separator + carrageReturn + "?(" + newline + '|$)', Pattern.CASE_INSENSITIVE), statement_separator)
-                                    }
-
-                                    // this monster regexp parses the query block by breaking it up into statements, each with three groups -
-                                    // 1) Positive lookbehind - this group checks that the preceding characters are either the start or a previous separator
-                                    // 2) The main statement body - this is the one we execute
-                                    // 3) The end of the statement, as indicated by a terminator at the end of the line or the end of the whole DDL
-                                    def statements = (Pattern.compile("(?<=(" + statement_separator + ")|^)([\\s\\S]*?)(?=(" + statement_separator + "\\s*\\n+)|(" + statement_separator + "\\s*\$)|\$)").matcher(ddl))
-                                        .findAll({
-                                            return (it[0].size() && ((Boolean) it[0] =~ /\S/) )
-                                        })
-                                        .collect({
-                                            return it[0]
-                                        })
-                                    this.executeSerially(hostConnection, statements, {
-                                        // statements must have executed successfully, close the various connections...
-                                        hostConnection.close({
-                                            adminHostConnection.close(fn)
-                                        })
-                                    });
-                                } catch (e) {
+                                // this monster regexp parses the query block by breaking it up into statements, each with three groups -
+                                // 1) Positive lookbehind - this group checks that the preceding characters are either the start or a previous separator
+                                // 2) The main statement body - this is the one we execute
+                                // 3) The end of the statement, as indicated by a terminator at the end of the line or the end of the whole DDL
+                                def statements = (Pattern.compile("(?<=(" + statement_separator + ")|^)([\\s\\S]*?)(?=(" + statement_separator + "\\s*\\n+)|(" + statement_separator + "\\s*\$)|\$)").matcher(ddl))
+                                    .findAll({
+                                        return (it[0].size() && ((Boolean) it[0] =~ /\S/) )
+                                    })
+                                    .collect({
+                                        return it[0]
+                                    })
+                                this.executeSerially(hostConnection, statements, {
+                                    // statements must have executed successfully, close the various connections...
+                                    hostConnection.close({
+                                        adminHostConnection.close(successHandler)
+                                    })
+                                },
+                                { errorMessage ->
                                     // something went wrong - probably bad ddl
                                     // close the non-admin host connection...
                                     hostConnection.close({
                                         // remove the database from the host...
                                         this.executeScriptTemplate(adminHostConnection,
-                                            host.drop_script_template,
-                                            host.batch_separator,
-                                            databaseName,
-                                            {
-                                                adminHostConnection.close(fn)
-                                                throw new Exception(e.getMessage())
-                                            }
+                                                host.drop_script_template,
+                                                host.batch_separator,
+                                                databaseName,
+                                                {
+                                                    adminHostConnection.close({
+                                                        errorHandler(errorMessage)
+                                                    })
+                                                }
                                         )
                                     })
-                                } // end try-catch
+
+                                })
                             }) // end host connection
                         }) // end setup of host database
                     }) // end admin connection
