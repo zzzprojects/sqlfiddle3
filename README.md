@@ -20,4 +20,6 @@ To do development in a local environment (requires local install of PostgreSQL a
     mvn clean package
     grunt &
     cd target/docker
-    vertx run sqlfiddle.groovy
+    # next line is for connecting with a remote debugger such as IntelliJ
+    export VERTX_OPTS='-Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=n,address=5005'
+    CLASSPATH=".:lib/*" vertx run sqlfiddle.groovy
