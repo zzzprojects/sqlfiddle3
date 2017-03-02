@@ -2,7 +2,6 @@ import java.security.MessageDigest
 import io.vertx.core.json.JsonObject
 import io.vertx.groovy.ext.jdbc.JDBCClient
 import java.util.regex.Pattern
-import java.sql.SQLException
 
 class SchemaDef {
     private def vertx
@@ -43,19 +42,21 @@ class SchemaDef {
             [ md5hash, content.db_type_id ],
             { dbDetails ->
                 if (dbDetails == null) {
-                    throw new Exception("Unable to find database type details");
-                }
-
-                // schema_def already registered, return it
-                if (dbDetails.short_code != null) {
                     fn([
-                        _id: "${content.db_type_id}_${dbDetails.short_code}".toString(),
-                        short_code: dbDetails.short_code,
-                        schema_structure: dbDetails.structure_json != null ?
-                            new JsonObject(dbDetails.structure_json) : null
+                        "error": "Unable to find database type"
                     ])
                 } else {
-                    this.registerSchema(content, md5hash, dbDetails, fn)
+                    if (dbDetails.short_code != null) {
+                        // schema_def already registered, return it
+                        fn([
+                            _id: "${content.db_type_id}_${dbDetails.short_code}".toString(),
+                            short_code: dbDetails.short_code,
+                            schema_structure: dbDetails.structure_json != null ?
+                                new JsonObject(dbDetails.structure_json) : null
+                        ])
+                    } else {
+                        this.registerSchema(content, md5hash, dbDetails, fn)
+                    }
                 }
             }
         )
@@ -188,7 +189,7 @@ class SchemaDef {
         })
     }
 
-    private findAvailableHost(db_type_id, fn) {
+    private findAvailableHost(db_type_id, successHandler, failureHandler) {
         DatabaseClient.singleRead(this.vertx, """
             SELECT
                 h.id,
@@ -218,7 +219,13 @@ class SchemaDef {
                         coalesce((SELECT count(s.id) FROM schema_defs s WHERE s.current_host_id = h2.id), 0) <
                         coalesce((SELECT count(s.id) FROM schema_defs s WHERE s.current_host_id = h.id), 0)
                 )
-        """, [db_type_id], fn)
+        """, [db_type_id], { result ->
+            if (result != null) {
+                successHandler(result)
+            } else {
+                failureHandler()
+            }
+        })
     }
 
     private getHostConnection(connectionDetails, connectionName, fn) {
@@ -364,9 +371,11 @@ class SchemaDef {
                             errorHandler(it)
                         }) // end setup of host database
                     }) // end admin connection
-                }) // end find available host
+                }, {
+                    errorHandler("No host of this type available to create schema. Try using a different database version.")
+                }
+        ) // end find available host
 
     } // end buildRunningDatabase
-
 
 }
