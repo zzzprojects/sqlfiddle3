@@ -255,7 +255,7 @@ class SchemaDef {
         executeHandler(statements)
     }
 
-    private executeScriptTemplate(hostConnection, script_template, batch_separator, databaseName, fn) {
+    private executeScriptTemplate(hostConnection, script_template, batch_separator, databaseName, successHandler, errorHandler) {
         String delimiter = (char) 7
         String newline = (char) 10
         String carrageReturn = (char) 13
@@ -266,10 +266,7 @@ class SchemaDef {
         if (batch_separator && batch_separator.size()) {
             script = script.replaceAll(Pattern.compile(newline + batch_separator + carrageReturn + "?(" + newline + '|$)', Pattern.CASE_INSENSITIVE), delimiter)
         }
-        this.executeSerially(hostConnection, script.tokenize(delimiter), fn, {
-            // script templates normally won't throw errors
-            throw it
-        })
+        this.executeSerially(hostConnection, script.tokenize(delimiter), successHandler, errorHandler)
     }
 
     private buildRunningDatabase(dbDetails, short_code, ddl, statement_separator, successHandler, errorHandler) {
@@ -352,12 +349,19 @@ class SchemaDef {
                                                     adminHostConnection.close({
                                                         errorHandler(errorMessage)
                                                     })
+                                                },
+                                                {
+                                                    // somehow failed to drop the database?
+                                                    errorHandler(errorMessage)
                                                 }
                                         )
                                     })
 
                                 })
                             }) // end host connection
+                        }, {
+                            // failed somehow to create host database....
+                            errorHandler(it)
                         }) // end setup of host database
                     }) // end admin connection
                 }) // end find available host
