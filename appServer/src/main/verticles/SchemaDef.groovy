@@ -1,10 +1,9 @@
-import java.security.MessageDigest
 import io.vertx.core.json.JsonObject
 import io.vertx.groovy.ext.jdbc.JDBCClient
 import java.util.regex.Pattern
 
 class SchemaDef {
-    private def vertx
+    private vertx
 
     SchemaDef(vertx) {
         this.vertx = vertx;
@@ -14,7 +13,7 @@ class SchemaDef {
         assert content.db_type_id && content.db_type_id instanceof Integer
         assert content.ddl.size() <= 8000
 
-        def md5hash = this.getMD5(content.ddl, content.statement_separator)
+        def md5hash = RESTUtils.getMD5((String) content.statement_separator + content.ddl)
 
         if (!content.statement_separator) {
             content.statement_separator = ";"
@@ -61,14 +60,6 @@ class SchemaDef {
             }
         )
     }
-
-    private String getMD5(ddl, statement_separator) {
-        def digest = MessageDigest.getInstance("MD5")
-        return new BigInteger(
-            1, digest.digest( (statement_separator + ddl).getBytes() )
-        ).toString(16).padLeft(32,"0")
-    }
-
 
     private getUniqueShortCode(db_type_id, md5hash, fn) {
         def short_code = md5hash.substring(0,5)
@@ -235,8 +226,8 @@ class SchemaDef {
                 if (hostConnectionHandler.succeeded()) {
                     fn(hostConnectionHandler.result())
                 } else {
-                    throw "Unable to get connection: " +
-                        hostConnectionHandler.cause().getMessage()
+                    throw new Exception("Unable to get connection: " +
+                        hostConnectionHandler.cause().getMessage())
                 }
 
             })

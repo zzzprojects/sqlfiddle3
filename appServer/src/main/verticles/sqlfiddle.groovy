@@ -19,5 +19,11 @@ router.post("/backend/createSchema").handler({ routingContext ->
     })
 })
 
+router.post("/backend/executeQuery").handler({ routingContext ->
+    (new QuerySet(vertx, routingContext.getBodyAsJson())).execute({ response ->
+        RESTUtils.writeJSONResponse(routingContext, response)
+    })
+})
+
 def server = vertx.createHttpServer()
 server.requestHandler(router.&accept).listen(8080)

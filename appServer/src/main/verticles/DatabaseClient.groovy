@@ -8,7 +8,7 @@ class DatabaseClient {
         user: "postgres",
         password: "password"
     ]
-    static def getConnection(vertx, fn) {
+    static getConnection(vertx, fn) {
         JDBCClient
             .createShared(vertx, jdbcConfig, "SQLFiddle")
             .getConnection({ dbConnectionHandler ->
@@ -21,7 +21,7 @@ class DatabaseClient {
             })
     }
 
-    static def singleRead(vertx, query, params, fn) {
+    static singleRead(vertx, query, params, fn) {
         getConnection(vertx, {connection ->
             connection.queryWithParams(query, params, {
                 connection.close()
@@ -29,13 +29,13 @@ class DatabaseClient {
                 if (queryObj.result && queryObj.result.size() == 1) {
                     fn(queryObj.result[0])
                 } else {
-                    fn(null)
+                    throw new Exception(queryObj.message)
                 }
             })
         })
     }
 
-    static def queryResultAsBasicObj(FutureImpl queryResult) {
+    static queryResultAsBasicObj(FutureImpl queryResult) {
         if (queryResult.succeeded()) {
             def columnNames = queryResult.result().columnNames
             return [
