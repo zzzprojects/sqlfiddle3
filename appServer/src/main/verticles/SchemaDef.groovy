@@ -1,17 +1,25 @@
 import io.vertx.core.json.JsonObject
-import io.vertx.groovy.ext.jdbc.JDBCClient
 import java.util.regex.Pattern
 
 class SchemaDef {
     private vertx
+    private Integer db_type_id
+    private String short_code
 
     SchemaDef(vertx) {
-        this.vertx = vertx;
+        this.vertx = vertx
+    }
+
+    SchemaDef(vertx, db_type_id, short_code) {
+        this.vertx = vertx
+        this.db_type_id = db_type_id
+        this.short_code = short_code
     }
 
     def processCreateRequest(content, fn) {
         assert content.db_type_id && content.db_type_id instanceof Integer
         assert content.ddl.size() <= 8000
+        this.db_type_id = content.db_type_id
 
         def md5hash = RESTUtils.getMD5((String) content.statement_separator + content.ddl)
 
@@ -46,6 +54,7 @@ class SchemaDef {
                     ])
                 } else {
                     if (dbDetails.short_code != null) {
+                        this.short_code = dbDetails.short_code
                         // schema_def already registered, return it
                         fn([
                             _id: "${content.db_type_id}_${dbDetails.short_code}".toString(),
@@ -108,6 +117,7 @@ class SchemaDef {
                 ddl,
                 md5,
                 statement_separator,
+                current_host_id,
                 structure_json,
                 last_used
             )
@@ -118,6 +128,7 @@ class SchemaDef {
                 createAttributes.ddl,
                 createAttributes.md5,
                 createAttributes.statement_separator,
+                createAttributes.current_host_id,
                 null
                 //structure != null ? (new JsonBuilder(structure).toString()) : null
             ], {
@@ -125,7 +136,7 @@ class SchemaDef {
                 if (it.succeeded()) {
                     fn(it.result())
                 } else {
-                    println it.cause().getMessage()
+                    throw new Exception(it.cause().getMessage())
                 }
             })
         })
@@ -134,21 +145,22 @@ class SchemaDef {
     private registerSchema(content, md5hash, dbDetails, fn) {
 
         this.getUniqueShortCode(content.db_type_id, md5hash, { short_code ->
+            this.short_code = short_code
             // if the dbType context is "host", then we have to try to create the database in our
             // backend environment before we try to save the schema definition
             if (dbDetails.context == "host") {
                 this.buildRunningDatabase(
-                dbDetails,
-                short_code,
                 content.ddl,
                 content.statement_separator,
-                {
+                { current_host_id, hostConnection ->
+                    hostConnection.close()
                     this.create([
                         "db_type_id": content.db_type_id,
                         "short_code": short_code,
                         "md5": md5hash,
                         "ddl": content.ddl,
                         "statement_separator": content.statement_separator,
+                        "current_host_id": current_host_id,
                         "structure": null
                     ], { result ->
                         fn([
@@ -169,6 +181,7 @@ class SchemaDef {
                     "md5": md5hash,
                     "ddl": content.ddl,
                     "statement_separator": content.statement_separator,
+                    "current_host_id": null,
                     "structure": null
                 ], { result ->
                     fn([
@@ -178,59 +191,6 @@ class SchemaDef {
                 })
             }
         })
-    }
-
-    private findAvailableHost(db_type_id, successHandler, failureHandler) {
-        DatabaseClient.singleRead(this.vertx, """
-            SELECT
-                h.id,
-                h.db_type_id,
-                h.jdbc_url_template,
-                h.default_database,
-                h.admin_username,
-                h.admin_password,
-                d.setup_script_template,
-                d.drop_script_template,
-                d.batch_separator,
-                d.jdbc_class_name
-            FROM
-                Hosts h
-                    INNER JOIN db_types d ON
-                        h.db_type_id = d.id
-            WHERE
-                h.db_type_id = ? AND
-                not exists (
-                    SELECT
-                        1
-                    FROM
-                        Hosts h2
-                    WHERE
-                        h2.id != h.id AND
-                        h2.db_type_id = h.db_type_id AND
-                        coalesce((SELECT count(s.id) FROM schema_defs s WHERE s.current_host_id = h2.id), 0) <
-                        coalesce((SELECT count(s.id) FROM schema_defs s WHERE s.current_host_id = h.id), 0)
-                )
-        """, [db_type_id], { result ->
-            if (result != null) {
-                successHandler(result)
-            } else {
-                failureHandler()
-            }
-        })
-    }
-
-    private getHostConnection(connectionDetails, connectionName, fn) {
-        JDBCClient
-            .createShared(this.vertx, connectionDetails, connectionName)
-            .getConnection({ hostConnectionHandler ->
-                if (hostConnectionHandler.succeeded()) {
-                    fn(hostConnectionHandler.result())
-                } else {
-                    throw new Exception("Unable to get connection: " +
-                        hostConnectionHandler.cause().getMessage())
-                }
-
-            })
     }
 
     private executeSerially(connection, statements, successHandler, errorHandler) {
@@ -267,21 +227,19 @@ class SchemaDef {
         this.executeSerially(hostConnection, script.tokenize(delimiter), successHandler, errorHandler)
     }
 
-    private buildRunningDatabase(dbDetails, short_code, ddl, statement_separator, successHandler, errorHandler) {
+    String getDatabaseName() {
+        return "${this.db_type_id}_${this.short_code}".toString()
+    }
+
+    def buildRunningDatabase(ddl, statement_separator, successHandler, errorHandler) {
         // find a backend host capable of running our ddl...
-        findAvailableHost(dbDetails.db_type_id, { host ->
+        DBTypes.findAvailableHost(this.vertx, this.db_type_id, { host ->
 
             // get a connection to that host as an admin...
-            this.getHostConnection([
-                    url: host.jdbc_url_template.replace("#databaseName#", host.default_database),
-                    driver_class: host.jdbc_class_name,
-                    user: host.admin_username,
-                    password: host.admin_password
-                ],
-                "admin_" + dbDetails.db_type_id, // connection pool name
+            host.getAdminHostConnection(this.vertx,
                 { adminHostConnection ->
 
-                    String databaseName = "${dbDetails.db_type_id}_${short_code}".toString()
+                    String databaseName = this.getDatabaseName()
                     // use the admin host connection to setup a new, blank database in the host we have found...
                     this.executeScriptTemplate(adminHostConnection,
                         host.setup_script_template,
@@ -290,25 +248,13 @@ class SchemaDef {
                         {
 
                         // get a connection to the new, blank database as a non-admin user...
-                        this.getHostConnection([
-                                url: host.jdbc_url_template.replaceAll("#databaseName#", "db_" + databaseName),
-                                driver_class: host.jdbc_class_name,
-                                // assumes the setup script template builds the database with this pattern of credentials
-                                user: "user_" + databaseName,
-                                password: databaseName,
-                                initial_pool_size: 1,
-                                min_pool_size: 1,
-                                max_pool_size: 2,
-                                max_idle_time: 60
-                            ],
-                            "fiddle_" + databaseName, // connection pool name
+                        host.getUserHostConnection(this.vertx, databaseName,
                             { hostConnection ->
                                 // timeout queries in case someone is trying to run something crazy
                                 // commented-out because it doesn't seem to work...?
                                 //hostConnection.setQueryTimeout((int)10)
 
                                 // consider refactoring below code to use executeScriptTemplate
-                                String delimiter = (char) 7
                                 String newline = (char) 10
                                 String carrageReturn = (char) 13
 
@@ -329,9 +275,8 @@ class SchemaDef {
                                         return it[0]
                                     })
                                 this.executeSerially(hostConnection, statements, {
-                                    // statements must have executed successfully, close the various connections...
-                                    hostConnection.close({
-                                        adminHostConnection.close(successHandler)
+                                    adminHostConnection.close({
+                                        successHandler(host.host_id, hostConnection)
                                     })
                                 },
                                 { errorMessage ->
@@ -340,18 +285,18 @@ class SchemaDef {
                                     hostConnection.close({
                                         // remove the database from the host...
                                         this.executeScriptTemplate(adminHostConnection,
-                                                host.drop_script_template,
-                                                host.batch_separator,
-                                                databaseName,
-                                                {
-                                                    adminHostConnection.close({
-                                                        errorHandler(errorMessage)
-                                                    })
-                                                },
-                                                {
-                                                    // somehow failed to drop the database?
+                                            host.drop_script_template,
+                                            host.batch_separator,
+                                            databaseName,
+                                            {
+                                                adminHostConnection.close({
                                                     errorHandler(errorMessage)
-                                                }
+                                                })
+                                            },
+                                            {
+                                                // somehow failed to drop the database?
+                                                errorHandler(errorMessage)
+                                            }
                                         )
                                     })
 
@@ -369,4 +314,26 @@ class SchemaDef {
 
     } // end buildRunningDatabase
 
+
+    def updateCurrentHost(schema_def_id, current_host_id, fn) {
+        DatabaseClient.getConnection(this.vertx, {connection ->
+            connection.updateWithParams("""
+            UPDATE
+                schema_defs
+            SET
+                current_host_id = ?
+            WHERE
+                id = ?
+            """, [
+                current_host_id, schema_def_id
+            ], {
+                connection.close()
+                if (it.succeeded()) {
+                    fn(it.result())
+                } else {
+                    throw new Exception(it.cause().getMessage())
+                }
+            })
+        })
+    }
 }

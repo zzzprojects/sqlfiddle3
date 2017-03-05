@@ -1,13 +1,16 @@
 class QuerySet {
     private vertx
-    private int db_type_id
+    private Integer db_type_id
     private String schema_short_code
     private String sql
     private String statement_separator
+    private String ddl
+    private String schema_statement_separator
     private String md5hash
     private String context
-    private int query_id
-    private int schema_def_id
+    private Integer query_id
+    private Integer schema_def_id
+    private Integer current_host_id
 
     QuerySet(vertx, content) {
         this.vertx = vertx
@@ -26,6 +29,9 @@ class QuerySet {
                 d.full_name,
                 d.context,
                 s.id as schema_def_id,
+                s.ddl,
+                s.statement_separator,
+                s.current_host_id,
                 q.id as query_id
             FROM
                 db_types d
@@ -46,7 +52,10 @@ class QuerySet {
                     ])
                 } else {
                     this.schema_def_id = queryDetails.schema_def_id
+                    this.ddl = queryDetails.ddl
+                    this.schema_statement_separator = queryDetails.statement_separator
                     this.context = queryDetails.context
+                    this.current_host_id = queryDetails.current_host_id
 
                     if (queryDetails.query_id == null) {
                         this.saveNewQuery({ query_id ->
@@ -117,12 +126,47 @@ class QuerySet {
     }
 
     private getQueryResults(fn) {
-        def response = [ID: this.query_id]
+        def response = [ID: this.query_id, sets: []]
 
         if (this.context == "host") {
-            response.sets = []
+            def schemaDef = new SchemaDef(vertx, db_type_id, schema_short_code)
+            if (this.current_host_id == null) {
+                schemaDef.buildRunningDatabase(ddl, schema_statement_separator,
+                    { host_id, hostConnection ->
+                        this.current_host_id = host_id
+                        schemaDef.updateCurrentHost(this.schema_def_id, host_id, {
+                            this.executeSQLStatements(hostConnection, { results ->
+                                response.sets = results
+                                hostConnection.close({
+                                    fn(response)
+                                })
+                            })
+                        })
+                    },
+                    fn
+                )
+            } else {
+                def host = new Host(this.current_host_id)
+                host.getUserHostConnection(this.vertx, schemaDef.getDatabaseName(), { hostConnection ->
+                    this.executeSQLStatements(hostConnection, { results ->
+                        response.sets = results
+                        hostConnection.close({
+                            fn(response)
+                        })
+                    })
+                })
+            }
+        } else {
+            // non-host context
+            fn(response)
         }
+    }
+    private executeSQLStatements(hostConnection, fn) {
+        hostConnection.setAutoCommit(false, {
 
-        fn(response)
+
+
+            hostConnection.rollback(fn([]))
+        })
     }
 }
