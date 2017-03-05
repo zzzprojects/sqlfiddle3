@@ -32,7 +32,7 @@ define(["jquery","./sqlite_driver"], function ($,SQLite_driver) {
                 {
                     window.define_tmp = window.define;
                     window.define = undefined;
-                    $.getScript("javascript/sql.js", function (script, textStatus, jqXHR) {
+                    $.getScript("node_modules/sql.js/js/sql.js", function (script, textStatus, jqXHR) {
                         window.define = window.define_tmp;
                         jsBuildSchema();
                     }).fail(function(jqxhr, settings, exception){

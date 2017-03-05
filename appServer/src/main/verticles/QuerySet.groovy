@@ -5,6 +5,7 @@ class QuerySet {
     private String sql
     private String statement_separator
     private String md5hash
+    private String context
     private int query_id
     private int schema_def_id
 
@@ -43,16 +44,19 @@ class QuerySet {
                     fn([
                         "error": "Unable to find schema definition"
                     ])
-                } else if (queryDetails.query_id == null) {
-                    this.schema_def_id = queryDetails.schema_def_id
-                    this.saveNewQuery({ query_id ->
-                        this.query_id = query_id
-                        this.getQueryResults(fn)
-                    })
                 } else {
-                    this.query_id = queryDetails.query_id
                     this.schema_def_id = queryDetails.schema_def_id
-                    this.getQueryResults(fn)
+                    this.context = queryDetails.context
+
+                    if (queryDetails.query_id == null) {
+                        this.saveNewQuery({ query_id ->
+                            this.query_id = query_id
+                            this.getQueryResults(fn)
+                        })
+                    } else {
+                        this.query_id = queryDetails.query_id
+                        this.getQueryResults(fn)
+                    }
                 }
             }
         )
@@ -113,6 +117,12 @@ class QuerySet {
     }
 
     private getQueryResults(fn) {
-        fn([ID: this.query_id, sets: []])
+        def response = [ID: this.query_id]
+
+        if (this.context == "host") {
+            response.sets = []
+        }
+
+        fn(response)
     }
 }

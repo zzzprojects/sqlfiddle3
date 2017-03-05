@@ -6,7 +6,7 @@ class DBTypes {
             d.context,
             d.full_name,
             d.simple_name,
-            d.jdbc_class_name,
+            d.jdbc_class_name as "className",
             d.sample_fragment,
             d.batch_separator,
             d.execution_plan_prefix,
