@@ -11,6 +11,7 @@ class QuerySet {
     private Integer query_id
     private Integer schema_def_id
     private Integer current_host_id
+    private Host host
 
     QuerySet(vertx, content) {
         this.vertx = vertx
@@ -132,9 +133,10 @@ class QuerySet {
             def schemaDef = new SchemaDef(vertx, db_type_id, schema_short_code)
             if (this.current_host_id == null) {
                 schemaDef.buildRunningDatabase(ddl, schema_statement_separator,
-                    { host_id, hostConnection ->
-                        this.current_host_id = host_id
-                        schemaDef.updateCurrentHost(this.schema_def_id, host_id, {
+                    { host, hostConnection ->
+                        this.host = host
+                        this.current_host_id = this.host.host_id
+                        schemaDef.updateCurrentHost(this.schema_def_id, this.current_host_id, {
                             this.executeSQLStatements(hostConnection, { results ->
                                 response.sets = results
                                 hostConnection.close({
@@ -146,7 +148,7 @@ class QuerySet {
                     fn
                 )
             } else {
-                def host = new Host(this.current_host_id)
+                this.host = new Host(this.current_host_id)
                 host.getUserHostConnection(this.vertx, schemaDef.getDatabaseName(), { hostConnection ->
                     this.executeSQLStatements(hostConnection, { results ->
                         response.sets = results
@@ -163,10 +165,49 @@ class QuerySet {
     }
     private executeSQLStatements(hostConnection, fn) {
         hostConnection.setAutoCommit(false, {
+            def queries = DatabaseClient.parseStatementGroups(
+                this.sql,
+                this.statement_separator,
+                this.host.batch_separator)
 
-
-
-            hostConnection.rollback(fn([]))
+            this.querySerially(hostConnection, queries, { resultSets ->
+                hostConnection.rollback(fn(resultSets))
+            })
         })
     }
+
+    private querySerially(connection, queries, fn) {
+        def queryHandler
+        def resultSets = []
+        queryHandler = { queryQueue ->
+            if (queryQueue.size() == 0) {
+                fn(resultSets)
+            } else {
+                def query = queryQueue.get(0)
+                queryQueue.remove(0)
+                connection.query(query, { queryResult ->
+                    resultSets.add(this.formatQueryResult(queryResult, query))
+                    if (queryResult.succeeded()) {
+                        queryHandler(queryQueue)
+                    } else {
+                        fn(resultSets)
+                    }
+                })
+            }
+        }
+        queryHandler(queries)
+    }
+
+    private formatQueryResult(queryResult, query) {
+        def set = [RESULTS: [ COLUMNS: [], DATA: [] ], SUCCEEDED:queryResult.succeeded(), STATEMENT: query]
+
+        if (set.SUCCEEDED) {
+            set.RESULTS.COLUMNS = queryResult.result().columnNames
+            set.RESULTS.DATA = queryResult.result().results
+        } else {
+            set.ERRORMESSAGE = queryResult.cause().getMessage()
+        }
+        return set
+    }
+
 }

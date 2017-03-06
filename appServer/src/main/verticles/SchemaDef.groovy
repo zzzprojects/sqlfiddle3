@@ -1,5 +1,4 @@
 import io.vertx.core.json.JsonObject
-import java.util.regex.Pattern
 
 class SchemaDef {
     private vertx
@@ -121,7 +120,7 @@ class SchemaDef {
                 structure_json,
                 last_used
             )
-            VALUES (?,?,?,?,?,?,current_timestamp)
+            VALUES (?,?,?,?,?,?,?,current_timestamp)
             """, [
                 createAttributes.db_type_id,
                 createAttributes.short_code,
@@ -152,7 +151,7 @@ class SchemaDef {
                 this.buildRunningDatabase(
                 content.ddl,
                 content.statement_separator,
-                { current_host_id, hostConnection ->
+                { host, hostConnection ->
                     hostConnection.close()
                     this.create([
                         "db_type_id": content.db_type_id,
@@ -160,7 +159,7 @@ class SchemaDef {
                         "md5": md5hash,
                         "ddl": content.ddl,
                         "statement_separator": content.statement_separator,
-                        "current_host_id": current_host_id,
+                        "current_host_id": host.host_id,
                         "structure": null
                     ], { result ->
                         fn([
@@ -193,38 +192,15 @@ class SchemaDef {
         })
     }
 
-    private executeSerially(connection, statements, successHandler, errorHandler) {
-        def executeHandler
-        executeHandler = { statementQueue ->
-            if (statementQueue.size() == 0) {
-                successHandler()
-            } else {
-                def statement = statementQueue.get(0)
-                statementQueue.remove(0)
-                connection.execute(statement, {
-                    if (it.succeeded()) {
-                        executeHandler(statementQueue)
-                    } else {
-                        errorHandler(it.throwable.getMessage())
-                    }
-                })
-            }
-        }
-        executeHandler(statements)
-    }
-
-    private executeScriptTemplate(hostConnection, script_template, batch_separator, databaseName, successHandler, errorHandler) {
+    private executeScriptTemplate(hostConnection, script_template, batch_separator, successHandler, errorHandler) {
         String delimiter = (char) 7
-        String newline = (char) 10
-        String carrageReturn = (char) 13
 
         // the scripts expect "databaseName" placeholders in the form of 2_abcde,
-        def script = script_template.replaceAll('#databaseName#', databaseName)
+        def script = script_template.replaceAll('#databaseName#', this.getDatabaseName())
 
-        if (batch_separator && batch_separator.size()) {
-            script = script.replaceAll(Pattern.compile(newline + batch_separator + carrageReturn + "?(" + newline + '|$)', Pattern.CASE_INSENSITIVE), delimiter)
-        }
-        this.executeSerially(hostConnection, script.tokenize(delimiter), successHandler, errorHandler)
+        def statements = DatabaseClient.parseStatementGroups(script, delimiter, batch_separator)
+
+        DatabaseClient.executeSerially(hostConnection, statements, successHandler, errorHandler)
     }
 
     String getDatabaseName() {
@@ -239,44 +215,24 @@ class SchemaDef {
             host.getAdminHostConnection(this.vertx,
                 { adminHostConnection ->
 
-                    String databaseName = this.getDatabaseName()
                     // use the admin host connection to setup a new, blank database in the host we have found...
                     this.executeScriptTemplate(adminHostConnection,
                         host.setup_script_template,
                         host.batch_separator,
-                        databaseName,
                         {
 
                         // get a connection to the new, blank database as a non-admin user...
-                        host.getUserHostConnection(this.vertx, databaseName,
+                        host.getUserHostConnection(this.vertx, this.getDatabaseName(),
                             { hostConnection ->
                                 // timeout queries in case someone is trying to run something crazy
                                 // commented-out because it doesn't seem to work...?
                                 //hostConnection.setQueryTimeout((int)10)
 
-                                // consider refactoring below code to use executeScriptTemplate
-                                String newline = (char) 10
-                                String carrageReturn = (char) 13
+                                def statements = DatabaseClient.parseStatementGroups(ddl, statement_separator, host.batch_separator)
 
-                                // run the provided ddl to setup the database environment...
-                                if (host.batch_separator && host.batch_separator.size()) {
-                                    ddl = ddl.replaceAll(Pattern.compile(newline + host.batch_separator + carrageReturn + "?(" + newline + '|$)', Pattern.CASE_INSENSITIVE), statement_separator)
-                                }
-
-                                // this monster regexp parses the query block by breaking it up into statements, each with three groups -
-                                // 1) Positive lookbehind - this group checks that the preceding characters are either the start or a previous separator
-                                // 2) The main statement body - this is the one we execute
-                                // 3) The end of the statement, as indicated by a terminator at the end of the line or the end of the whole DDL
-                                def statements = (Pattern.compile("(?<=(" + statement_separator + ")|^)([\\s\\S]*?)(?=(" + statement_separator + "\\s*\\n+)|(" + statement_separator + "\\s*\$)|\$)").matcher(ddl))
-                                    .findAll({
-                                        return (it[0].size() && ((Boolean) it[0] =~ /\S/) )
-                                    })
-                                    .collect({
-                                        return it[0]
-                                    })
-                                this.executeSerially(hostConnection, statements, {
+                                DatabaseClient.executeSerially(hostConnection, statements, {
                                     adminHostConnection.close({
-                                        successHandler(host.host_id, hostConnection)
+                                        successHandler(host, hostConnection)
                                     })
                                 },
                                 { errorMessage ->
@@ -287,7 +243,6 @@ class SchemaDef {
                                         this.executeScriptTemplate(adminHostConnection,
                                             host.drop_script_template,
                                             host.batch_separator,
-                                            databaseName,
                                             {
                                                 adminHostConnection.close({
                                                     errorHandler(errorMessage)
