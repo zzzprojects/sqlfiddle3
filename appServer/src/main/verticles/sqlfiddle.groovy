@@ -1,3 +1,4 @@
+import io.vertx.core.http.HttpMethod
 import io.vertx.groovy.ext.web.handler.BodyHandler
 import io.vertx.groovy.ext.web.handler.StaticHandler
 import io.vertx.groovy.ext.web.Router
@@ -24,6 +25,40 @@ router.post("/backend/executeQuery").handler({ routingContext ->
         RESTUtils.writeJSONResponse(routingContext, response)
     })
 })
+
+router.route(HttpMethod.GET, "/backend/loadContent/:dbtypeid/:shortcode").handler({ routingContext ->
+    Integer db_type_id
+    String short_code
+
+    try {
+        db_type_id = Integer.parseInt(routingContext.request().getParam("dbtypeid"))
+        short_code = routingContext.request().getParam("shortcode")
+    } catch (NumberFormatException e) {
+        RESTUtils.write404Response(routingContext)
+        return
+    }
+
+    RESTUtils.writeJSONResponse(routingContext, [db_type_id:db_type_id, short_code:short_code])
+})
+
+router.route(HttpMethod.GET, "/backend/loadContent/:dbtypeid/:shortcode/:queryid").handler({ routingContext ->
+    Integer db_type_id
+    String short_code
+    Integer query_id
+
+    try {
+        db_type_id = Integer.parseInt(routingContext.request().getParam("dbtypeid"))
+        short_code = routingContext.request().getParam("shortcode")
+        query_id = Integer.parseInt(routingContext.request().getParam("queryid"))
+    } catch (NumberFormatException e) {
+        RESTUtils.write404Response(routingContext)
+        return
+    }
+
+    RESTUtils.writeJSONResponse(routingContext, [db_type_id:db_type_id, short_code:short_code, query_id: query_id])
+})
+
+
 
 def server = vertx.createHttpServer()
 server.requestHandler(router.&accept).listen(8080)

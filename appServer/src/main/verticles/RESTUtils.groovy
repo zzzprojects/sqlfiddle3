@@ -8,6 +8,13 @@ class RESTUtils {
         response.end((new JsonObject(responseObj)).encodePrettily())
     }
 
+    static write404Response(routingContext) {
+        def response = routingContext.response()
+        response.putHeader("content-type", "application/json")
+        response.setStatusCode(404)
+        response.end((new JsonObject(["error":"Not found"])).encodePrettily())
+    }
+
     static String getMD5(String content) {
         def digest = MessageDigest.getInstance("MD5")
         return new BigInteger(

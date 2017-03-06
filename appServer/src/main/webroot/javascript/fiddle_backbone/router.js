@@ -67,7 +67,7 @@ define([
                 $("body").block({ message: "Loading..."});
 
                 return idm.serviceCall({
-                    url: "endpoint/loadContent/" + frag.replace(/\//g, '_').replace(/^!/, '')
+                    url: "/loadContent/" + frag.replace(/^!/, '')
                 })
                 .then(function (resp) {
                     schemaDef.set("loading", false);
