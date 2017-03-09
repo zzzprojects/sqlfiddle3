@@ -37,8 +37,13 @@ router.route(HttpMethod.GET, "/backend/loadContent/:dbtypeid/:shortcode").handle
         RESTUtils.write404Response(routingContext)
         return
     }
-
-    RESTUtils.writeJSONResponse(routingContext, [db_type_id:db_type_id, short_code:short_code])
+    (new SchemaDef(vertx, db_type_id, short_code)).getBasicDetails({ response ->
+        if (!response) {
+            RESTUtils.write404Response(routingContext)
+        } else {
+            RESTUtils.writeJSONResponse(routingContext, response)
+        }
+    })
 })
 
 router.route(HttpMethod.GET, "/backend/loadContent/:dbtypeid/:shortcode/:queryid").handler({ routingContext ->
@@ -55,7 +60,14 @@ router.route(HttpMethod.GET, "/backend/loadContent/:dbtypeid/:shortcode/:queryid
         return
     }
 
-    RESTUtils.writeJSONResponse(routingContext, [db_type_id:db_type_id, short_code:short_code, query_id: query_id])
+    (new SchemaDef(vertx, db_type_id, short_code)).getDetails({ response ->
+        if (!response) {
+            RESTUtils.write404Response(routingContext)
+        } else {
+            RESTUtils.writeJSONResponse(routingContext, response)
+        }
+    })
+
 })
 
 

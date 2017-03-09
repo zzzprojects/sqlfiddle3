@@ -2,8 +2,17 @@ import io.vertx.core.json.JsonObject
 
 class SchemaDef {
     private vertx
+    private Integer schema_def_id
     private Integer db_type_id
     private String short_code
+    private String md5
+    private String ddl
+    private String statement_separator
+    private String batch_separator
+    private String simple_name
+    private String full_name
+    private String context
+    private Integer current_host_id
 
     SchemaDef(vertx) {
         this.vertx = vertx
@@ -15,15 +24,104 @@ class SchemaDef {
         this.short_code = short_code
     }
 
+    def getBasicDetails(fn) {
+        def returnDetails = { result ->
+            if (result) {
+                fn([
+                    "short_code": this.short_code,
+                    "ddl": this.ddl,
+                    "schema_statement_separator": this.statement_separator,
+                    "schema_structure": null,
+                    "full_name": this.full_name
+                ])
+            } else {
+                fn(null)
+            }
+        }
+        if (this.schema_def_id) {
+            returnDetails(true)
+        } else {
+            this.readFromDatabase(returnDetails)
+        }
+    }
+
+    Integer getId() {
+        return schema_def_id
+    }
+
+    String getShortCode() {
+        return short_code
+    }
+
+    Integer getDBTypeID() {
+        return db_type_id
+    }
+
+    String getContext() {
+        return context
+    }
+
+    Integer getCurrentHostId() {
+        return current_host_id
+    }
+
+    String getBatchSeparator() {
+        return batch_separator
+    }
+
+    private readFromDatabase(fn) {
+        DatabaseClient.singleRead(this.vertx, """
+            SELECT
+                s.id as schema_def_id,
+                s.ddl,
+                s.md5,
+                s.statement_separator,
+                s.current_host_id,
+                d.simple_name,
+                d.full_name,
+                d.context,
+                d.batch_separator
+            FROM
+                db_types d
+                    INNER JOIN schema_defs s ON
+                        d.id = s.db_type_id AND
+                        s.short_code = ?
+            WHERE
+                d.id = ?
+            """,
+                [ this.short_code, this.db_type_id ],
+            { schema_def ->
+                if (schema_def != null) {
+                    this.schema_def_id = schema_def.schema_def_id
+                    this.ddl = schema_def.ddl
+                    this.md5 = schema_def.md5
+                    this.statement_separator = schema_def.statement_separator
+                    this.current_host_id = schema_def.current_host_id
+                    this.simple_name = schema_def.simple_name
+                    this.full_name = schema_def.full_name
+                    this.context = schema_def.context
+                    this.batch_separator = schema_def.batch_separator
+                    fn(true)
+                } else {
+                    fn(false)
+                }
+            }
+        )
+    }
+
     def processCreateRequest(content, fn) {
         assert content.db_type_id && content.db_type_id instanceof Integer
         assert content.ddl.size() <= 8000
-        this.db_type_id = content.db_type_id
 
-        def md5hash = RESTUtils.getMD5((String) content.statement_separator + content.ddl)
+        this.db_type_id = content.db_type_id
+        this.ddl = content.ddl
+
+        this.md5 = RESTUtils.getMD5((String) content.statement_separator + content.ddl)
 
         if (!content.statement_separator) {
-            content.statement_separator = ";"
+            this.statement_separator = ";"
+        } else {
+            this.statement_separator = content.statement_separator
         }
 
         // see if we can find an existing schema that matches this md5 and db_type
@@ -45,7 +143,7 @@ class SchemaDef {
             WHERE
                 d.id = ?
             """,
-            [ md5hash, content.db_type_id ],
+            [ this.md5, this.db_type_id ],
             { dbDetails ->
                 if (dbDetails == null) {
                     fn([
@@ -54,23 +152,22 @@ class SchemaDef {
                 } else {
                     if (dbDetails.short_code != null) {
                         this.short_code = dbDetails.short_code
-                        // schema_def already registered, return it
                         fn([
-                            _id: "${content.db_type_id}_${dbDetails.short_code}".toString(),
-                            short_code: dbDetails.short_code,
+                            _id: this.getDatabaseName(),
+                            short_code: this.short_code,
                             schema_structure: dbDetails.structure_json != null ?
                                 new JsonObject(dbDetails.structure_json) : null
                         ])
                     } else {
-                        this.registerSchema(content, md5hash, dbDetails, fn)
+                        this.registerSchema(fn)
                     }
                 }
             }
         )
     }
 
-    private getUniqueShortCode(db_type_id, md5hash, fn) {
-        def short_code = md5hash.substring(0,5)
+    private getUniqueShortCode(fn) {
+        def short_code = this.md5.substring(0,5)
 
         DatabaseClient.getConnection(this.vertx, {connection ->
             connection.queryWithParams("""
@@ -81,7 +178,7 @@ class SchemaDef {
             WHERE
                 s.db_type_id = ? AND
                 s.short_code LIKE ?
-            """, [db_type_id, short_code + "%"], { possibleConflicts ->
+            """, [this.db_type_id, this.short_code + "%"], { possibleConflicts ->
                 connection.close()
                 def foundUniqueCode = false
                 while (!foundUniqueCode) {
@@ -92,7 +189,7 @@ class SchemaDef {
                         }) {
                         // if it does already exist, then make the short_code one
                         // character bigger and see if that is available
-                        short_code = md5hash.substring(0,short_code.size()+1)
+                        short_code = this.md5.substring(0,short_code.size()+1)
                         // we assume that eventually the md5 will have a unique
                         // combination of characters to use as the short_code
                     } else {
@@ -105,7 +202,7 @@ class SchemaDef {
 
     }
 
-    private create(createAttributes, fn) {
+    private saveToDatabase(fn) {
         DatabaseClient.getConnection(this.vertx, {connection ->
             connection.updateWithParams("""
             INSERT INTO
@@ -122,12 +219,12 @@ class SchemaDef {
             )
             VALUES (?,?,?,?,?,?,?,current_timestamp)
             """, [
-                createAttributes.db_type_id,
-                createAttributes.short_code,
-                createAttributes.ddl,
-                createAttributes.md5,
-                createAttributes.statement_separator,
-                createAttributes.current_host_id,
+                this.db_type_id,
+                this.short_code,
+                this.ddl,
+                this.md5,
+                this.statement_separator,
+                this.current_host_id,
                 null
                 //structure != null ? (new JsonBuilder(structure).toString()) : null
             ], {
@@ -141,30 +238,21 @@ class SchemaDef {
         })
     }
 
-    private registerSchema(content, md5hash, dbDetails, fn) {
+    private registerSchema(fn) {
 
-        this.getUniqueShortCode(content.db_type_id, md5hash, { short_code ->
+        this.getUniqueShortCode({ short_code ->
             this.short_code = short_code
             // if the dbType context is "host", then we have to try to create the database in our
             // backend environment before we try to save the schema definition
-            if (dbDetails.context == "host") {
+            if (this.context == "host") {
                 this.buildRunningDatabase(
-                content.ddl,
-                content.statement_separator,
                 { host, hostConnection ->
                     hostConnection.close()
-                    this.create([
-                        "db_type_id": content.db_type_id,
-                        "short_code": short_code,
-                        "md5": md5hash,
-                        "ddl": content.ddl,
-                        "statement_separator": content.statement_separator,
-                        "current_host_id": host.host_id,
-                        "structure": null
-                    ], { result ->
+                    this.current_host_id = host.host_id
+                    this.saveToDatabase({ result ->
                         fn([
-                            _id: "${content.db_type_id}_${short_code}".toString(),
-                            short_code: short_code
+                            _id: this.getDatabaseName(),
+                            short_code: this.short_code
                         ])
                     })
                 },
@@ -174,18 +262,10 @@ class SchemaDef {
                     ])
                 })
             } else { // context is not in our backend, so don't need to attempt to build it first
-                this.create([
-                    "db_type_id": content.db_type_id,
-                    "short_code": short_code,
-                    "md5": md5hash,
-                    "ddl": content.ddl,
-                    "statement_separator": content.statement_separator,
-                    "current_host_id": null,
-                    "structure": null
-                ], { result ->
+                this.saveToDatabase({ result ->
                     fn([
-                        _id: "${content.db_type_id}_${short_code}".toString(),
-                        short_code: short_code
+                        _id: this.getDatabaseName(),
+                        short_code: this.short_code
                     ])
                 })
             }
@@ -207,7 +287,7 @@ class SchemaDef {
         return "${this.db_type_id}_${this.short_code}".toString()
     }
 
-    def buildRunningDatabase(ddl, statement_separator, successHandler, errorHandler) {
+    def buildRunningDatabase(successHandler, errorHandler) {
         // find a backend host capable of running our ddl...
         DBTypes.findAvailableHost(this.vertx, this.db_type_id, { host ->
 
@@ -228,7 +308,7 @@ class SchemaDef {
                                 // commented-out because it doesn't seem to work...?
                                 //hostConnection.setQueryTimeout((int)10)
 
-                                def statements = DatabaseClient.parseStatementGroups(ddl, statement_separator, host.batch_separator)
+                                def statements = DatabaseClient.parseStatementGroups(this.ddl, this.statement_separator, host.batch_separator)
 
                                 DatabaseClient.executeSerially(hostConnection, statements, {
                                     adminHostConnection.close({
@@ -270,7 +350,7 @@ class SchemaDef {
     } // end buildRunningDatabase
 
 
-    def updateCurrentHost(schema_def_id, current_host_id, fn) {
+    def updateCurrentHost(current_host_id, fn) {
         DatabaseClient.getConnection(this.vertx, {connection ->
             connection.updateWithParams("""
             UPDATE
@@ -279,11 +359,11 @@ class SchemaDef {
                 current_host_id = ?
             WHERE
                 id = ?
-            """, [
-                current_host_id, schema_def_id
-            ], {
+            """,
+            [ current_host_id, this.schema_def_id ], {
                 connection.close()
                 if (it.succeeded()) {
+                    this.current_host_id = current_host_id
                     fn(it.result())
                 } else {
                     throw new Exception(it.cause().getMessage())

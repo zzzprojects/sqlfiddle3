@@ -16,8 +16,8 @@ class DatabaseClient {
                 if (dbConnectionHandler.succeeded()) {
                     fn(dbConnectionHandler.result())
                 } else {
-                    throw "Unable to get connection: " +
-                        dbConnectionHandler.cause().getMessage()
+                    throw new Exception("Unable to get connection: " +
+                        dbConnectionHandler.cause().getMessage())
                 }
             })
     }
@@ -30,7 +30,7 @@ class DatabaseClient {
                 if (queryObj.result && queryObj.result.size() == 1) {
                     fn(queryObj.result[0])
                 } else {
-                    throw new Exception(queryObj.message)
+                    fn(null)
                 }
             })
         })

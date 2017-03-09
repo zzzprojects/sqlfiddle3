@@ -11,8 +11,7 @@ class RESTUtils {
     static write404Response(routingContext) {
         def response = routingContext.response()
         response.putHeader("content-type", "application/json")
-        response.setStatusCode(404)
-        response.end((new JsonObject(["error":"Not found"])).encodePrettily())
+        response.end((new JsonObject(["error":"Fiddle not found"])).encodePrettily())
     }
 
     static String getMD5(String content) {

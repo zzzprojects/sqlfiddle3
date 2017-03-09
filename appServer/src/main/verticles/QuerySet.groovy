@@ -1,64 +1,41 @@
+import javax.xml.validation.Schema
+
 class QuerySet {
     private vertx
-    private Integer db_type_id
-    private String schema_short_code
     private String sql
     private String statement_separator
-    private String ddl
-    private String schema_statement_separator
     private String md5hash
-    private String context
     private Integer query_id
-    private Integer schema_def_id
-    private Integer current_host_id
-    private Host host
+    private SchemaDef schemaDef
 
     QuerySet(vertx, content) {
         this.vertx = vertx
-        this.db_type_id = content.db_type_id
-        this.schema_short_code = content.schema_short_code
+        this.schemaDef = new SchemaDef(this.vertx, content.db_type_id, content.schema_short_code)
         this.sql = content.sql
         this.statement_separator = content.statement_separator
         this.md5hash = RESTUtils.getMD5((String) statement_separator + sql)
     }
 
     def execute (fn) {
-        // see if we can find existing data for this query
-        DatabaseClient.singleRead(this.vertx, """
+        this.schemaDef.getBasicDetails({
+            // see if we can find existing data for this query
+            DatabaseClient.singleRead(this.vertx, """
             SELECT
-                d.simple_name,
-                d.full_name,
-                d.context,
-                s.id as schema_def_id,
-                s.ddl,
-                s.statement_separator,
-                s.current_host_id,
                 q.id as query_id
             FROM
-                db_types d
-                    INNER JOIN schema_defs s ON
-                        d.id = s.db_type_id AND
-                        s.short_code = ?
-                    LEFT OUTER JOIN queries q ON
-                        s.id = q.schema_def_id AND
-                        q.md5 = ?
+                queries q
             WHERE
-                d.id = ?
+                q.schema_def_id = ? AND
+                q.md5 = ?
             """,
-                [ schema_short_code, md5hash, db_type_id ],
+            [ this.schemaDef.getId(), this.md5hash ],
             { queryDetails ->
-                if (queryDetails == null) {
+                if (this.schemaDef.getId() == null) {
                     fn([
                         "error": "Unable to find schema definition"
                     ])
                 } else {
-                    this.schema_def_id = queryDetails.schema_def_id
-                    this.ddl = queryDetails.ddl
-                    this.schema_statement_separator = queryDetails.statement_separator
-                    this.context = queryDetails.context
-                    this.current_host_id = queryDetails.current_host_id
-
-                    if (queryDetails.query_id == null) {
+                    if (queryDetails == null) {
                         this.saveNewQuery({ query_id ->
                             this.query_id = query_id
                             this.getQueryResults(fn)
@@ -69,8 +46,8 @@ class QuerySet {
                     }
                 }
             }
-        )
-
+            )
+        })
     }
 
     private saveNewQuery(fn) {
@@ -97,8 +74,8 @@ class QuerySet {
                         this.md5hash,
                         this.sql,
                         this.statement_separator,
-                        this.schema_def_id,
-                        this.schema_def_id
+                        this.schemaDef.getId(),
+                        this.schemaDef.getId()
                     ],
                     {
                         connection.queryWithParams("""
@@ -110,7 +87,7 @@ class QuerySet {
                                 schema_def_id = ?
                             """,
                             [
-                                this.schema_def_id
+                                this.schemaDef.getId()
                             ],
                             {
                                 def query_id = DatabaseClient.queryResultAsBasicObj(it).result[0].query_id
@@ -129,27 +106,22 @@ class QuerySet {
     private getQueryResults(fn) {
         def response = [ID: this.query_id, sets: []]
 
-        if (this.context == "host") {
-            def schemaDef = new SchemaDef(vertx, db_type_id, schema_short_code)
-            if (this.current_host_id == null) {
-                schemaDef.buildRunningDatabase(ddl, schema_statement_separator,
-                    { host, hostConnection ->
-                        this.host = host
-                        this.current_host_id = this.host.host_id
-                        schemaDef.updateCurrentHost(this.schema_def_id, this.current_host_id, {
-                            this.executeSQLStatements(hostConnection, { results ->
-                                response.sets = results
-                                hostConnection.close({
-                                    fn(response)
-                                })
+        if (this.schemaDef.getContext() == "host") {
+            if (this.schemaDef.getCurrentHostId() == null) {
+                schemaDef.buildRunningDatabase({ host, hostConnection ->
+                    schemaDef.updateCurrentHost(host.host_id, {
+                        this.executeSQLStatements(hostConnection, { results ->
+                            response.sets = results
+                            hostConnection.close({
+                                fn(response)
                             })
                         })
-                    },
-                    fn
-                )
+                    })
+                },
+                fn)
             } else {
-                this.host = new Host(this.current_host_id)
-                host.getUserHostConnection(this.vertx, schemaDef.getDatabaseName(), { hostConnection ->
+                def host = new Host(this.schemaDef.getCurrentHostId())
+                host.getUserHostConnection(this.vertx, this.schemaDef.getDatabaseName(), { hostConnection ->
                     this.executeSQLStatements(hostConnection, { results ->
                         response.sets = results
                         hostConnection.close({
@@ -163,20 +135,20 @@ class QuerySet {
             fn(response)
         }
     }
+
     private executeSQLStatements(hostConnection, fn) {
         hostConnection.setAutoCommit(false, {
-            def queries = DatabaseClient.parseStatementGroups(
-                this.sql,
+            def queries = DatabaseClient.parseStatementGroups(this.sql,
                 this.statement_separator,
-                this.host.batch_separator)
+                this.schemaDef.getBatchSeparator())
 
-            this.querySerially(hostConnection, queries, { resultSets ->
+            querySerially(hostConnection, queries, { resultSets ->
                 hostConnection.rollback(fn(resultSets))
             })
         })
     }
 
-    private querySerially(connection, queries, fn) {
+    private static querySerially(connection, queries, fn) {
         def queryHandler
         def resultSets = []
         queryHandler = { queryQueue ->
@@ -186,7 +158,7 @@ class QuerySet {
                 def query = queryQueue.get(0)
                 queryQueue.remove(0)
                 connection.query(query, { queryResult ->
-                    resultSets.add(this.formatQueryResult(queryResult, query))
+                    resultSets.add(formatQueryResult(queryResult, query))
                     if (queryResult.succeeded()) {
                         queryHandler(queryQueue)
                     } else {
@@ -198,7 +170,7 @@ class QuerySet {
         queryHandler(queries)
     }
 
-    private formatQueryResult(queryResult, query) {
+    private static formatQueryResult(queryResult, query) {
         def set = [RESULTS: [ COLUMNS: [], DATA: [] ], SUCCEEDED:queryResult.succeeded(), STATEMENT: query]
 
         if (set.SUCCEEDED) {
