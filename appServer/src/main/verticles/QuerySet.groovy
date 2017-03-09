@@ -1,10 +1,8 @@
-import javax.xml.validation.Schema
-
 class QuerySet {
     private vertx
     private String sql
     private String statement_separator
-    private String md5hash
+    private String md5
     private Integer query_id
     private SchemaDef schemaDef
 
@@ -13,40 +11,78 @@ class QuerySet {
         this.schemaDef = new SchemaDef(this.vertx, content.db_type_id, content.schema_short_code)
         this.sql = content.sql
         this.statement_separator = content.statement_separator
-        this.md5hash = RESTUtils.getMD5((String) statement_separator + sql)
+        this.md5 = RESTUtils.getMD5((String) statement_separator + sql)
+    }
+
+    QuerySet(vertx, db_type_id, short_code, query_id) {
+        this.vertx = vertx
+        this.schemaDef = new SchemaDef(this.vertx, db_type_id, short_code)
+        this.query_id = query_id
+    }
+
+    def getBasicDetails (fn) {
+        this.schemaDef.getBasicDetails({ schemaDetails ->
+            if (!schemaDetails) {
+                fn(null)
+                return
+            } else {
+                DatabaseClient.singleRead(this.vertx, """
+                SELECT
+                    q.id,
+                    q.sql,
+                    q.statement_separator as query_statement_separator,
+                    q.md5
+                FROM
+                    queries q
+                WHERE
+                    q.schema_def_id = ? AND
+                    q.id = ?
+                """,
+                [ this.schemaDef.getId(), this.query_id ],
+                { queryDetails ->
+                    if (queryDetails == null) {
+                        fn(null)
+                        return
+                    } else {
+                        this.statement_separator = queryDetails.query_statement_separator
+                        this.sql = queryDetails.sql
+                        this.md5 = queryDetails.md5
+                        fn(schemaDetails + queryDetails)
+                    }
+                })
+            }
+        })
     }
 
     def execute (fn) {
         this.schemaDef.getBasicDetails({
-            // see if we can find existing data for this query
-            DatabaseClient.singleRead(this.vertx, """
-            SELECT
-                q.id as query_id
-            FROM
-                queries q
-            WHERE
-                q.schema_def_id = ? AND
-                q.md5 = ?
-            """,
-            [ this.schemaDef.getId(), this.md5hash ],
-            { queryDetails ->
-                if (this.schemaDef.getId() == null) {
-                    fn([
-                        "error": "Unable to find schema definition"
-                    ])
-                } else {
+            if (this.schemaDef.getId() == null) {
+                fn([
+                    "error": "Unable to find schema definition"
+                ])
+            } else {
+                // see if we can find existing data for this query
+                DatabaseClient.singleRead(this.vertx, """
+                SELECT
+                    q.id as query_id
+                FROM
+                    queries q
+                WHERE
+                    q.schema_def_id = ? AND
+                    q.md5 = ?
+                """,
+                [ this.schemaDef.getId(), this.md5 ],
+                { queryDetails ->
                     if (queryDetails == null) {
-                        this.saveNewQuery({ query_id ->
-                            this.query_id = query_id
+                        this.saveNewQuery({
                             this.getQueryResults(fn)
                         })
                     } else {
                         this.query_id = queryDetails.query_id
                         this.getQueryResults(fn)
                     }
-                }
+                })
             }
-            )
         })
     }
 
@@ -71,7 +107,7 @@ class QuerySet {
                         schema_def_id = ?
                     """,
                     [
-                        this.md5hash,
+                        this.md5,
                         this.sql,
                         this.statement_separator,
                         this.schemaDef.getId(),
@@ -90,10 +126,9 @@ class QuerySet {
                                 this.schemaDef.getId()
                             ],
                             {
-                                def query_id = DatabaseClient.queryResultAsBasicObj(it).result[0].query_id
+                                this.query_id = DatabaseClient.queryResultAsBasicObj(it).result[0].query_id
                                 connection.commit({
-                                    connection.close()
-                                    fn(query_id)
+                                    connection.close(fn)
                                 })
                             }
                         )

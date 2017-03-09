@@ -60,11 +60,16 @@ router.route(HttpMethod.GET, "/backend/loadContent/:dbtypeid/:shortcode/:queryid
         return
     }
 
-    (new SchemaDef(vertx, db_type_id, short_code)).getDetails({ response ->
+    def querySet = new QuerySet(vertx, db_type_id, short_code, query_id)
+
+    querySet.getBasicDetails({ response ->
         if (!response) {
             RESTUtils.write404Response(routingContext)
         } else {
-            RESTUtils.writeJSONResponse(routingContext, response)
+            querySet.execute({ resultSets ->
+                response.sets = resultSets.sets
+                RESTUtils.writeJSONResponse(routingContext, response)
+            })
         }
     })
 
