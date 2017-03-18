@@ -1,0 +1,16 @@
+version: '2'
+services:
+  appServer:
+    image: "$ECR_URI:appServer"
+    ports:
+    - "80:8080"
+    links:
+    - appDatabase
+    - postgresql93Host
+    - mysql56Host
+  appDatabase:
+    image: "$ECR_URI:appDatabase"
+  postgresql93Host:
+    image: "$ECR_URI:postgresql93Host"
+  mysql56Host:
+    image: "$ECR_URI:mysql56Host"
