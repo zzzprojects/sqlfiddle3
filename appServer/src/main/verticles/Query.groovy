@@ -190,10 +190,13 @@ class Query {
             if (queryQueue.size() == 0) {
                 fn(resultSets)
             } else {
+                long startTime = (new Date()).toTimestamp().getTime()
                 def query = queryQueue.get(0)
                 queryQueue.remove(0)
                 connection.query(query, { queryResult ->
-                    resultSets.add(formatQueryResult(queryResult, query))
+                    def set = formatQueryResult(queryResult, query)
+                    set.EXECUTIONTIME = ((new Date()).toTimestamp().getTime() - startTime)
+                    resultSets.add(set)
                     if (queryResult.succeeded()) {
                         queryHandler(queryQueue)
                     } else {
