@@ -73,7 +73,7 @@ class DatabaseClient {
                 return (it[0].size() && (it[0] =~ /\S/).find() )
             })
             .collect({
-                return it[0]
+                return (String) it[0]
             })
     }
 

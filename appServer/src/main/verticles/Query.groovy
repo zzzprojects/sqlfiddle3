@@ -197,7 +197,7 @@ class Query {
                     def set = formatQueryResult(queryResult, query)
                     set.EXECUTIONTIME = ((new Date()).toTimestamp().getTime() - startTime)
                     resultSets.add(set)
-                    if (queryResult.succeeded()) {
+                    if (set.SUCCEEDED) {
                         queryHandler(queryQueue)
                     } else {
                         fn(resultSets)
@@ -215,7 +215,26 @@ class Query {
             set.RESULTS.COLUMNS = queryResult.result().columnNames
             set.RESULTS.DATA = queryResult.result().results
         } else {
-            set.ERRORMESSAGE = queryResult.cause().getMessage()
+            def errorMessage = queryResult.cause().getMessage()
+            if ((errorMessage =~ /ResultSet is from UPDATE\. No Data\./).find() || // MySQL when using SELECT ... INTO @var
+                (errorMessage =~ /No results were returned by the query/).find() || // PostgreSQL
+                (errorMessage =~ /The executeQuery method must return a result set\./).find() || // SQL Server
+                (errorMessage =~ /Cannot perform fetch on a PLSQL statement/).find() || // Oracle
+                (errorMessage =~ /ORA-01002: fetch out of sequence/).find() || // Also Oracle
+                (errorMessage =~ /ORA-00900: invalid SQL statement/).find() // Oracle again :(
+                ) {
+                set.SUCCEEDED = true
+            } else if ((errorMessage =~ /current transaction is aborted, commands ignored until end of transaction block$/).find()) {
+                //throw new PostgreSQLException(statement)
+                set.ERRORMESSAGE = errorMessage
+            } else if ((errorMessage =~ /insert or update on table "deferred_.*" violates foreign key constraint "deferred_.*_ref"/).find()) {
+                set.ERRORMESSAGE = "Explicit commits are not allowed within the query panel."
+            } else if ((errorMessage =~ /Cannot execute statement in a READ ONLY transaction./).find() ||
+                    (errorMessage =~ /Can not issue data manipulation statements with executeQuery/).find()) {
+                set.ERRORMESSAGE = "DDL and DML statements are not allowed in the query panel for MySQL; only SELECT statements are allowed. Put DDL and DML in the schema panel."
+            } else {
+                set.ERRORMESSAGE = errorMessage
+            }
         }
         return set
     }
