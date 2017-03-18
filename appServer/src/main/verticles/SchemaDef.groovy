@@ -49,14 +49,6 @@ class SchemaDef {
         return schema_def_id
     }
 
-    String getShortCode() {
-        return short_code
-    }
-
-    Integer getDBTypeID() {
-        return db_type_id
-    }
-
     String getContext() {
         return context
     }
@@ -159,6 +151,7 @@ class SchemaDef {
                                 new JsonObject(dbDetails.structure_json) : null
                         ])
                     } else {
+                        this.context = dbDetails.context
                         this.registerSchema(fn)
                     }
                 }
