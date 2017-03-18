@@ -1,4 +1,4 @@
-class QuerySet {
+class Query {
     private vertx
     private String sql
     private String statement_separator
@@ -6,7 +6,7 @@ class QuerySet {
     private Integer query_id
     private SchemaDef schemaDef
 
-    QuerySet(vertx, content) {
+    Query(vertx, content) {
         this.vertx = vertx
         this.schemaDef = new SchemaDef(this.vertx, content.db_type_id, content.schema_short_code)
         this.sql = content.sql
@@ -14,7 +14,7 @@ class QuerySet {
         this.md5 = RESTUtils.getMD5((String) statement_separator + sql)
     }
 
-    QuerySet(vertx, db_type_id, short_code, query_id) {
+    Query(vertx, db_type_id, short_code, query_id) {
         this.vertx = vertx
         this.schemaDef = new SchemaDef(this.vertx, db_type_id, short_code)
         this.query_id = query_id
