@@ -17,7 +17,7 @@ module.exports = function(grunt) {
             webroot: {
                 files: [{
                     cwd     : srcFolder,
-                    src     : ['**/*'],
+                    src     : ['**/*', '*'],
                     dest    : targetFolder,
                     flatten : false,
                     expand  : true
@@ -99,6 +99,10 @@ module.exports = function(grunt) {
             copyLESS: {
                 files: [srcFolder + 'css/*.less', srcFolder + 'css/*.css', "!" + srcFolder + 'css/*_min.css',],
                 tasks: ['sync:webroot', 'less', 'requirejs:minifyMainCSS', 'requirejs:minifyPrintCSS' ]
+            },
+            copyStatic: {
+                files: [srcFolder + '*.html', srcFolder + 'images/**', srcFolder + 'img/*',],
+                tasks: ['sync:webroot']
             },
             copyVerticles: {
                 files: ["src/main/verticles/**"],
