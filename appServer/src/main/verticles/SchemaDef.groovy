@@ -12,6 +12,8 @@ class SchemaDef {
     private String simple_name
     private String full_name
     private String context
+    private String execution_plan_prefix
+    private String execution_plan_suffix
     private Integer current_host_id
 
     SchemaDef(vertx) {
@@ -53,12 +55,24 @@ class SchemaDef {
         return context
     }
 
+    String getShortCode() {
+        return short_code
+    }
+
     Integer getCurrentHostId() {
         return current_host_id
     }
 
     String getBatchSeparator() {
         return batch_separator
+    }
+
+    String getExecutionPlanPrefix() {
+        return execution_plan_prefix?:""
+    }
+
+    String getExecutionPlanSuffix() {
+        return execution_plan_suffix?:""
     }
 
     private readFromDatabase(fn) {
@@ -72,7 +86,9 @@ class SchemaDef {
                 d.simple_name,
                 d.full_name,
                 d.context,
-                d.batch_separator
+                d.batch_separator,
+                d.execution_plan_prefix,
+                d.execution_plan_suffix
             FROM
                 db_types d
                     INNER JOIN schema_defs s ON
@@ -93,6 +109,8 @@ class SchemaDef {
                     this.full_name = schema_def.full_name
                     this.context = schema_def.context
                     this.batch_separator = schema_def.batch_separator
+                    this.execution_plan_prefix = schema_def.execution_plan_prefix
+                    this.execution_plan_suffix = schema_def.execution_plan_suffix
                     fn(true)
                 } else {
                     fn(false)

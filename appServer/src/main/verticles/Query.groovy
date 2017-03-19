@@ -176,33 +176,93 @@ class Query {
             def queries = DatabaseClient.parseStatementGroups(this.sql,
                 this.statement_separator,
                 this.schemaDef.getBatchSeparator())
+            def hasExecutionPlan = this.schemaDef.getExecutionPlanPrefix().size() > 0 || this.schemaDef.getExecutionPlanSuffix().size() > 0
 
-            querySerially(hostConnection, queries, { resultSets ->
+            querySerially(hostConnection, queries, hasExecutionPlan, { resultSets ->
                 hostConnection.rollback(fn(resultSets))
             })
         })
     }
 
-    private static querySerially(connection, queries, fn) {
+    private querySerially(connection, queries, includeExecutionPlan, fn) {
         def queryHandler
         def resultSets = []
         queryHandler = { queryQueue ->
             if (queryQueue.size() == 0) {
                 fn(resultSets)
             } else {
-                long startTime = (new Date()).toTimestamp().getTime()
                 def query = queryQueue.get(0)
                 queryQueue.remove(0)
-                connection.query(query, { queryResult ->
-                    def set = formatQueryResult(queryResult, query)
-                    set.EXECUTIONTIME = ((new Date()).toTimestamp().getTime() - startTime)
-                    resultSets.add(set)
-                    if (set.SUCCEEDED) {
-                        queryHandler(queryQueue)
-                    } else {
-                        fn(resultSets)
-                    }
-                })
+
+                if (includeExecutionPlan) {
+                    def executionPlan = null
+                    def finalExecutionPlanResults = [processed : null, raw : null]
+
+                    // execution plan able to be computed, therefore get it before we run the main query
+                    def executionPlanSQL = this.schemaDef.getExecutionPlanPrefix() + query + this.schemaDef.getExecutionPlanSuffix()
+                    executionPlanSQL = executionPlanSQL.replaceAll("#schema_short_code#", this.schemaDef.getShortCode())
+                    executionPlanSQL = executionPlanSQL.replaceAll("#query_id#", this.query_id.toString())
+                    def executionPlanStatements = DatabaseClient.parseStatementGroups(executionPlanSQL, ";", this.schemaDef.getBatchSeparator())
+
+                    // call this same function but with "false" for "includeExecutionPlan"
+                    querySerially(connection, executionPlanStatements, false, { executionPlanResultSets ->
+                        executionPlan = executionPlanResultSets[executionPlanResultSets.size()-1] // the last record is the one we want here
+                        if (executionPlan.SUCCEEDED && executionPlan.RESULTS.COLUMNS.size() > 0) {
+                            finalExecutionPlanResults.processed = executionPlan.RESULTS
+                            finalExecutionPlanResults.raw = executionPlan.RESULTS
+
+                            /*
+                                TODO: restore this xslt logic from sqlfiddle2
+
+                                if (db_type.execution_plan_xslt?.size() &&
+                                    executionPlan.RESULTS.COLUMNS?.size() == 1 &&
+                                    executionPlan.RESULTS.DATA?.size() == 1) {
+                                    try {
+                                        def factory = TransformerFactory.newInstance()
+                                        def transformer = factory.newTransformer(new StreamSource(new StringReader(db_type.execution_plan_xslt)))
+                                        def outputStream = new ByteArrayOutputStream()
+                                        transformer.transform(new StreamSource(new StringReader(executionPlanResults.raw.DATA[0][0])), new StreamResult(outputStream))
+
+                                        executionPlanResults.processed.DATA[0][0] = new String(outputStream.toByteArray(), Charset.defaultCharset())
+                                    } catch (e) {
+                                        // unable to parse the execution plan results
+                                    }
+                                }
+                         */
+
+                        }
+
+                        long startTime = (new Date()).toTimestamp().getTime()
+                        connection.query(query, { queryResult ->
+                            def set = formatQueryResult(queryResult, query)
+                            set.EXECUTIONTIME = ((new Date()).toTimestamp().getTime() - startTime)
+                            set.EXECUTIONPLANRAW = finalExecutionPlanResults.raw
+                            set.EXECUTIONPLAN = finalExecutionPlanResults.processed
+
+                            resultSets.add(set)
+                            if (set.SUCCEEDED) {
+                                queryHandler(queryQueue)
+                            } else {
+                                fn(resultSets)
+                            }
+                        })
+                    })
+                } else {
+
+                    // TODO: refactor so share with above logic
+                    long startTime = (new Date()).toTimestamp().getTime()
+                    connection.query(query, { queryResult ->
+                        def set = formatQueryResult(queryResult, query)
+                        set.EXECUTIONTIME = ((new Date()).toTimestamp().getTime() - startTime)
+                        resultSets.add(set)
+                        if (set.SUCCEEDED) {
+                            queryHandler(queryQueue)
+                        } else {
+                            fn(resultSets)
+                        }
+                    })
+                }
+
             }
         }
         queryHandler(queries)
