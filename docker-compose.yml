@@ -1,13 +1,12 @@
-version: '2'
+version: '3'
 services:
   appServer:
     image: sqlfiddle:appServer
     ports:
     - "8080:8080"
-    links:
-    - appDatabase
-    - postgresql93Host
-    - mysql56Host
+    extra_hosts:
+     - "sqlserver2014Host:192.168.99.101"
+     - "oracle11gHost:192.168.99.101"
   appDatabase:
     build:
       context: ./appDatabase

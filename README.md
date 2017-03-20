@@ -13,6 +13,24 @@ If building on a Mac, be sure to prep docker first:
     docker-machine start
     eval $(docker-machine env)
 
+
+## Commercial software requirements
+
+If you want to run the commercial database software (Microsoft SQL Server 2014 Express, Oracle 11g R2 XE) you must have a Windows Server 2008 R2 (or higher) server available. The core software must be installed prior to attempting to use it with SQL Fiddle. Below are the requirements for how the commercial databases should be installed. The docker-compose file assumes this server is listening at ip address 192.168.99.101
+
+### SQL Server 2014 Express
+
+1) Don't use the "SQL Server Replication" Feature (leave the others checked)
+2) Use the "Default instance" (leave the "Instance ID" as "MSSQLSERVER")
+3) Authentication mode should be "Mixed"; "sa" password should be set to "SQLServerPassword"
+4) Enable TCP/IP connections in the network configuration
+
+### Oracle 11g R2 XE
+1) "system" password should be set to "password"
+2) Download ojdbc6.jar from here: http://www.oracle.com/technetwork/database/enterprise-edition/jdbc-112010-090769.html
+3) Put ojdbc6.jar in appServer/src/main/verticles/lib before you run `mvn clean package`
+
+
 ## Setting up in Amazon ECS
 
 Build the images if you haven't done the above:
