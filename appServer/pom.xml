@@ -9,7 +9,7 @@
     <name>SQL Fiddle file assembly</name>
 
     <properties>
-        <node.install.directory>${project.parent.basedir}</node.install.directory>
+        <node.install.directory>target</node.install.directory>
         <grunt.task>build</grunt.task>
     </properties>
 
@@ -67,7 +67,7 @@
               <version>3.0.2</version>
               <executions>
                 <execution>
-                  <id>copy-resources</id>
+                  <id>copy-web-resources</id>
                   <phase>validate</phase>
                   <goals>
                     <goal>copy-resources</goal>
@@ -77,10 +77,36 @@
                     <resources>
                       <resource>
                         <directory>src/main/webroot</directory>
-                        <filtering>true</filtering>
-                        <excludes>
-                            <exclude>src/main/webroot/node_modules</exclude>
-                        </excludes>
+                      </resource>
+                    </resources>
+                  </configuration>
+                </execution>
+                <execution>
+                  <id>copy-grunt-resources</id>
+                  <phase>validate</phase>
+                  <goals>
+                    <goal>copy-resources</goal>
+                  </goals>
+                  <configuration>
+                    <outputDirectory>${basedir}/target</outputDirectory>
+                    <resources>
+                      <resource>
+                        <directory>src/main/grunt</directory>
+                      </resource>
+                    </resources>
+                  </configuration>
+                </execution>
+                <execution>
+                  <id>copy-lambda-resources</id>
+                  <phase>validate</phase>
+                  <goals>
+                    <goal>copy-resources</goal>
+                  </goals>
+                  <configuration>
+                    <outputDirectory>${basedir}/target/lambda</outputDirectory>
+                    <resources>
+                      <resource>
+                        <directory>src/main/lambda</directory>
                       </resource>
                     </resources>
                   </configuration>
@@ -93,7 +119,8 @@
                 <artifactId>frontend-maven-plugin</artifactId>
                 <version>0.0.28</version>
                 <configuration>
-                    <installDirectory>${node.install.directory}</installDirectory>
+                    <installDirectory>target</installDirectory>
+                    <workingDirectory>target</workingDirectory>
                 </configuration>
                 <executions>
                     <execution>
@@ -107,28 +134,57 @@
                             <npmVersion>2.10.1</npmVersion>
                         </configuration>
                     </execution>
+
                     <execution>
-                        <id>npm-install</id>
+                        <id>npm-install-webroot-dependencies</id>
+                        <configuration>
+                            <workingDirectory>target/docker/webroot</workingDirectory>
+                        </configuration>
+                        <phase>process-resources</phase>
                         <goals>
                             <goal>npm</goal>
                         </goals>
-                        <phase>initialize</phase>
+                    </execution>
+
+                    <execution>
+                        <id>npm-install-grunt-dependencies</id>
+                        <phase>process-resources</phase>
+                        <goals>
+                            <goal>npm</goal>
+                        </goals>
+                    </execution>
+
+                    <execution>
+                        <id>npm-install-lambda-dependencies</id>
+                        <goals>
+                            <goal>npm</goal>
+                        </goals>
+                        <phase>process-resources</phase>
                         <configuration>
-                            <arguments>install</arguments>
+                            <workingDirectory>target/lambda</workingDirectory>
                         </configuration>
                     </execution>
+
                     <execution>
                         <id>grunt</id>
+                        <configuration>
+                            <arguments>${grunt.task}</arguments>
+                        </configuration>
                         <goals>
                             <goal>grunt</goal>
                         </goals>
                         <phase>compile</phase>
-                        <configuration>
-                            <arguments>${grunt.task}</arguments>
-                        </configuration>
                     </execution>
                 </executions>
             </plugin>
+
+            <!--plugin>
+                <groupId>com.github.eirslett</groupId>
+                <artifactId>frontend-maven-plugin</artifactId>
+                <version>0.0.28</version>
+                <executions>
+                </executions>
+            </plugin-->
 
             <plugin>
                 <groupId>com.spotify</groupId>

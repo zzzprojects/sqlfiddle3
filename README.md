@@ -45,6 +45,7 @@ Set your env variables:
     export AWS_ACCESS_KEY_ID=your access key
     export AWS_SECRET_ACCESS_KEY=your secret key
     export ECR_URI=URI for the repository you just created, above
+    export KEYPAIR=your ec2 keypair
 
 Upload the images to ECR)
 
@@ -59,7 +60,7 @@ Pushing may take a long time. If it gets stalled out, use `docker-machine restar
 Install the ECS CLI: http://docs.aws.amazon.com/AmazonECS/latest/developerguide/ECS_CLI_installation.html
 
     ecs-cli configure --region $REGION --access-key $AWS_ACCESS_KEY_ID --secret-key $AWS_SECRET_ACCESS_KEY --cluster sqlfiddle3
-    ecs-cli up --keypair $KEYPAIR -capability-iam --size 2 --instance-type t2.medium
+    ecs-cli up --keypair $KEYPAIR -capability-iam --size 1 --instance-type t2.medium
     ecs-cli compose --file docker-compose-ecs.yml up
     ecs-cli ps
 
@@ -73,10 +74,11 @@ To remove the service, run this command:
 
 *requires local install of PostgreSQL, MySQL and Vert.x*
 
-    cd appServer/
-    mvn clean package
-    grunt &
-    cd target/docker
+    $ cd appServer
+    $ mvn clean package
+    $ (cd target; grunt) &
+    $ cd target/docker
     # next line is for connecting with a remote debugger such as IntelliJ
-    export VERTX_OPTS='-Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=n,address=5005'
-    CLASSPATH=".:lib/*" vertx run sqlfiddle.groovy
+    $ export VERTX_OPTS='-Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=n,address=5005'
+    $ export CLASSPATH=.:lib/*
+    $ vertx run sqlfiddle.groovy

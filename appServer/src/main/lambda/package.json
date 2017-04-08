@@ -1,0 +1,10 @@
+{
+  "name": "SQLFiddle",
+  "author": "Jake Feasel <admin@sqlfiddle.com>",
+  "repository": "https://github.com/jakefeasel/sqlfiddle3",
+  "license": "MIT",
+  "version": "3.0.0",
+  "devDependencies": {
+    "pg": "6.1.5"
+  }
+}

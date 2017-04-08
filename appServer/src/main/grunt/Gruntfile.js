@@ -1,19 +1,10 @@
 module.exports = function(grunt) {
 
-    var srcFolder = 'src/main/webroot/',
-        targetFolder = 'target/docker/webroot/';
+    var srcFolder = '../src/main/webroot/',
+        targetFolder = 'docker/webroot/';
 
     grunt.initConfig({
         sync: {
-            node_modules: {
-                files: [{
-                    cwd     : "node_modules",
-                    src     : ['**/*'],
-                    dest    : targetFolder + "node_modules",
-                    flatten : false,
-                    expand  : true
-                }]
-            },
             webroot: {
                 files: [{
                     cwd     : srcFolder,
@@ -116,7 +107,7 @@ module.exports = function(grunt) {
     grunt.loadNpmTasks('grunt-contrib-requirejs');
     grunt.loadNpmTasks('grunt-contrib-less');
 
-    grunt.registerTask('build', ['sync:verticles', 'sync:node_modules', 'less', 'requirejs']);
+    grunt.registerTask('build', ['sync:verticles', 'less', 'requirejs']);
     grunt.registerTask('default', ['build', 'watch']);
 
 };

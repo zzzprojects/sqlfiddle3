@@ -1,7 +1,4 @@
 appServer/target
-appServer/node_modules
-appServer/etc
-appServer/node
 *.jar
 .idea
 *.iml
