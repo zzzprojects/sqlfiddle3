@@ -6,13 +6,21 @@ It is also implemented with Vert.x in the application tier.
 
 To get running:
 
-    cd appServer/ && mvn clean package && cd .. && docker-compose up -d
+    $ cd appServer/ && mvn clean package && cd .. && docker-compose up -d
+
+After you run the above command, you can open the site by visiting http://localhost:8080
 
 If building on a Mac, be sure to prep docker first:
 
-    docker-machine start
-    eval $(docker-machine env)
+    $ docker-machine start
+    $ eval $(docker-machine env)
 
+Also, you'll have to access the site via the docker-machine ip address, like so:
+
+    $ docker-machine ip
+    192.168.99.101
+
+Then you can access the site by visiting http://192.168.99.101:8080
 
 ## Commercial software requirements
 
