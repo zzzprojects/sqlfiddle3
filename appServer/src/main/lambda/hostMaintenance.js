@@ -4,10 +4,10 @@ exports.testConnection = (event, context, callback) => {
 
     // variables provided from lambda environment
     var client = new pg.Client({
-        user: postgresUser,
-        password: postgresPassword,
+        user: process.env.postgresUser,
+        password: process.env.postgresPassword,
         database: 'sqlfiddle',
-        host: postgresHost,
+        host: process.env.postgresHost,
         port: 5432
     });
 

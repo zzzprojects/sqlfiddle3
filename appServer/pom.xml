@@ -97,7 +97,7 @@
                   </configuration>
                 </execution>
                 <execution>
-                  <id>copy-lambda-resources</id>
+                  <id>default-cli</id>
                   <phase>validate</phase>
                   <goals>
                     <goal>copy-resources</goal>
@@ -216,7 +216,8 @@
                 <artifactId>maven-assembly-plugin</artifactId>
                 <executions>
                     <execution>
-                        <id>make-lambda-assembly</id>
+                        <!-- execute individually with  mvn resources:copy-resources && mvn assembly:single -->
+                        <id>default-cli</id>
                         <phase>package</phase>
                         <goals>
                             <goal>single</goal>
