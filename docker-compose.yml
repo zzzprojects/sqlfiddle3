@@ -4,6 +4,7 @@ services:
     image: sqlfiddle:appServer
     ports:
     - "8080:8080"
+    - "5005:5005"
     extra_hosts:
      - "sqlserver2014Host:192.168.99.102"
      - "oracle11gHost:192.168.99.102"
