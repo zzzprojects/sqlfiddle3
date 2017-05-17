@@ -2,3 +2,4 @@ appServer/target
 *.jar
 .idea
 *.iml
+.vagrant

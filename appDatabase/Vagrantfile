@@ -1,0 +1,47 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+# Vagrantfile API/syntax version. Don't touch unless you know what you're doing!
+VAGRANTFILE_API_VERSION = "2"
+
+Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
+  config.vm.define "appDatabase", primary: true do |appDatabase|
+    appDatabase.vm.provider "aws" do |aws, override|
+        aws.access_key_id = ENV['AWS_ACCESS_KEY_ID']
+        aws.secret_access_key = ENV['AWS_SECRET_ACCESS_KEY']
+
+        aws.ami = "ami-29ebb519" #Ubuntu trusty 64bit (public)
+        aws.region = ENV['REGION']
+        aws.availability_zone = ENV['AVAILABILITY_ZONE']
+        aws.instance_type = "t2.medium"
+        aws.associate_public_ip = true
+        aws.subnet_id = ENV['SUBNET_ID_FIRST']
+        aws.security_groups = ENV['SECURITY_GROUP_ID']
+        aws.keypair_name = ENV['KEYPAIR']
+
+        override.vm.box = "dummy"
+        override.ssh.username = "ubuntu"
+        override.ssh.private_key_path = ENV['PATH_TO_KEYPAIR_PEM']
+
+        override.vm.synced_folder ".", "/vagrant", type: "rsync", rsync__exclude: [".vagrant/"]
+
+        aws.private_ip_address = ENV['APP_DATABASE_IP']
+        aws.block_device_mapping = [{
+            'VirtualName' => "postgresql_data",
+            'DeviceName' => '/dev/sda1',
+            'Ebs.VolumeSize' => 50,
+            'Ebs.DeleteOnTermination' => true,
+            'Ebs.VolumeType' => 'io1',
+            'Ebs.Iops' => 500
+        }]
+    end
+
+    appDatabase.vm.provision :shell, :inline => 'cp /vagrant/vagrant_scripts/s3cfg_template /vagrant/vagrant_scripts/.s3cfg'
+    appDatabase.vm.provision :shell, :inline => "echo 'access_key = #{ENV['AWS_ACCESS_KEY_ID']}' >> /vagrant/vagrant_scripts/.s3cfg"
+    appDatabase.vm.provision :shell, :inline => "echo 'secret_key = #{ENV['AWS_SECRET_ACCESS_KEY']}' >> /vagrant/vagrant_scripts/.s3cfg"
+    appDatabase.vm.provision :shell, :path => "vagrant_scripts/pg93_bootstrap.sh"
+    appDatabase.vm.provision :shell, :path => "vagrant_scripts/s3_backup.sh"
+  end
+
+
+end
