@@ -7,6 +7,14 @@
         "Service": "lambda.amazonaws.com"
       },
       "Action": "sts:AssumeRole"
+    },
+    {
+      "Sid": "",
+      "Effect": "Allow",
+      "Principal": {
+        "Service": "apigateway.amazonaws.com"
+      },
+      "Action": "sts:AssumeRole"
     }
   ]
 }

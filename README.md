@@ -28,6 +28,19 @@ Also, you'll have to access the site via the docker-machine ip address, like so:
 
 Then you can access the site by visiting http://192.168.99.101:8080
 
+## To do development in a local environment:
+
+*requires local install of PostgreSQL, MySQL and Vert.x*
+
+    $ cd appServer
+    $ mvn clean package
+    $ (cd target; grunt) &
+    $ cd target/docker
+    # next line is for connecting with a remote debugger such as IntelliJ
+    $ export VERTX_OPTS='-Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=n,address=5005'
+    $ export CLASSPATH=.:lib/*
+    $ vertx run sqlfiddle.groovy
+
 ## Commercial software requirements
 
 If you want to run the commercial database software (Microsoft SQL Server 2014 Express, Oracle 11g R2 XE) you must have a Windows Server 2008 R2 (or higher) server available. The core software must be installed prior to attempting to use it with SQL Fiddle. Below are the requirements for how the commercial databases should be installed. The docker-compose file assumes this server is listening at ip address 192.168.99.101
@@ -63,6 +76,7 @@ Set your core env variables necessary for working with your AWS account:
     export SUBNET_ID_FIRST=a subnet identifier within the above vpc
     export SUBNET_ID_ADDITIONAL=additional subnet identifier within the above vpc, but in a different availability zone from the first
     export KEYPAIR=your ec2 keypair
+    export AWS_ACCOUNT_ID=`aws ec2 describe-security-groups --query 'SecurityGroups[0].OwnerId' --output text`
 
 Install Vagrant (https://www.vagrantup.com) and the vagrant-aws plugin. See the plugin site here for details: https://github.com/mitchellh/vagrant-aws
 
@@ -93,12 +107,20 @@ Create IAM roles for Lambda execution and ecs/ec2 scaling:
 
 Register Lambda functions which will keep your host database environments fresh:
 
-    export LAMBDA_ARN=`aws lambda create-function --function-name addHost \
-      --runtime nodejs6.10 --role $HOST_MAINTENANCE_ROLE_ARN \
-      --handler hostMaintenance.addHost \
-      --environment Variables="{postgresHost=$APP_DATABASE_IP,postgresUser=postgres,postgresPassword=password}" \
-      --zip-file fileb://appServer/target/sqlfiddle-lambda.zip \
-      --vpc-config SubnetIds=$SUBNET_ID_FIRST,$SUBNET_ID_ADDITIONAL,SecurityGroupIds=$SECURITY_GROUP_ID | jq .FunctionArn -r`
+    aws lambda create-function --function-name syncHosts \
+        --runtime nodejs6.10 --role $HOST_MAINTENANCE_ROLE_ARN \
+        --handler hostMaintenance.syncHosts \
+        --environment Variables="{postgresHost=$APP_DATABASE_IP,postgresUser=postgres,postgresPassword=password}" \
+        --zip-file fileb://appServer/target/sqlfiddle-lambda.zip \
+        --vpc-config SubnetIds=$SUBNET_ID_FIRST,$SUBNET_ID_ADDITIONAL,SecurityGroupIds=$SECURITY_GROUP_ID
+
+    export LAMBDA_ARN=`aws lambda create-function --function-name updateHostRegistry \
+        --runtime nodejs6.10 --role $HOST_MAINTENANCE_ROLE_ARN \
+        --handler manageECS.updateHostRegistry --timeout 10 \
+        --environment Variables="{CLUSTERNAME=sqlfiddle3}" \
+        --zip-file fileb://appServer/target/sqlfiddle-lambda.zip \
+        | jq .FunctionArn -r`
+
 
 Create an API Gateway interface to the above Lambda function:
 
@@ -107,7 +129,7 @@ Create an API Gateway interface to the above Lambda function:
       --rest-api-id $API_GATEWAY_ID | jq .items[0].id -r`
     export API_RESOURCE_ID=`aws apigateway create-resource \
       --rest-api-id $API_GATEWAY_ID \
-      --parent-id $API_ROOT_RESOURCE_ID --path 'addHost' | jq .id -r`
+      --parent-id $API_ROOT_RESOURCE_ID --path 'updateHostRegistry' | jq .id -r`
     aws apigateway put-method --rest-api-id $API_GATEWAY_ID \
       --resource-id $API_RESOURCE_ID \
       --http-method GET \
@@ -126,8 +148,22 @@ Create an API Gateway interface to the above Lambda function:
 
     aws apigateway create-deployment --rest-api-id $API_GATEWAY_ID --stage-name prod
 
-    export LAMBDA_NOTIFICATION_URL="https://$API_GATEWAY_ID.execute-api.$REGION.amazonaws.com/prod/addHost"
+    aws lambda add-permission \
+        --function-name $LAMBDA_ARN \
+        --statement-id updateHostRegistryPermission \
+        --action lambda:InvokeFunction \
+        --principal apigateway.amazonaws.com \
+        --source-arn "arn:aws:execute-api:$REGION:$AWS_ACCOUNT_ID:$API_GATEWAY_ID/prod/*/updateHostRegistry"
 
+    aws lambda add-permission \
+        --function-name $LAMBDA_ARN \
+        --statement-id updateHostRegistryPermissionTest \
+        --action lambda:InvokeFunction \
+        --principal apigateway.amazonaws.com \
+        --source-arn "arn:aws:execute-api:$REGION:$AWS_ACCOUNT_ID:$API_GATEWAY_ID/*/*/updateHostRegistry"
+
+
+    export LAMBDA_NOTIFICATION_URL="https://$API_GATEWAY_ID.execute-api.$REGION.amazonaws.com/prod/updateHostRegistry"
 
 Create a new ECR repository ('sqlfiddle'):
 
@@ -135,7 +171,7 @@ Create a new ECR repository ('sqlfiddle'):
     export ECR_URI=`aws ecr create-repository --repository-name sqlfiddle \
       | jq .repository.repositoryUri`
 
-Upload the docker images to ECR)
+Upload the docker images to ECR:
 
     docker tag sqlfiddle:appServer $ECR_URI:appServer && docker push $ECR_URI:appServer
     docker tag sqlfiddle:mysql56Host $ECR_URI:mysql56Host && docker push $ECR_URI:mysql56Host
@@ -163,7 +199,7 @@ Bring the database services up:
     ecs-cli compose --file aws/docker-compose-postgresql93.yml \
       --project-name postgresql93 service up
 
-When these come online, they will issue a request to the above Lambda function (addHost), registering themselves within the "hosts" table running on the appDatabase server. Once registered there, they will be usable to the appServer instances which will be created next.
+When these come online, they will issue a request to the above Lambda function (updateHostRegistry), registering themselves within the "hosts" table running on the appDatabase server. Once registered there, they will be usable to the appServer instances which will be created next.
 
 Create an Application Load Balancer to access the appServer services:
 
@@ -199,16 +235,3 @@ Use the output from that command to view the running application in your browser
  http://sqlfiddle3ELB-987654321.us-west-2.elb.amazonaws.com/
 
 If you want a more friendly DNS entry, use Route 53 to host your domain and set the A record to have an alias target which points to the ELB DNSName returned above, or use a CNAME alias on a non-TLD record.
-
-## To do development in a local environment:
-
-*requires local install of PostgreSQL, MySQL and Vert.x*
-
-    $ cd appServer
-    $ mvn clean package
-    $ (cd target; grunt) &
-    $ cd target/docker
-    # next line is for connecting with a remote debugger such as IntelliJ
-    $ export VERTX_OPTS='-Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=n,address=5005'
-    $ export CLASSPATH=.:lib/*
-    $ vertx run sqlfiddle.groovy
