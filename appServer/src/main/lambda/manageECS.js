@@ -1,10 +1,10 @@
-var Promise = require('q');
+var Q = require('q');
 
 exports.addTask = (event, context, callback) => {
     var AWS = require('aws-sdk'),
         ecs = new AWS.ECS({"apiVersion": '2014-11-13'}),
         cluster = process.env.CLUSTERNAME,
-        serviceName = process.env.SERVICE;
+        serviceName = event.serviceName;
 
     ecs.listTasks({ cluster, serviceName }, (err, data) => {
         ecs.updateService({
@@ -13,6 +13,49 @@ exports.addTask = (event, context, callback) => {
             cluster
         }, callback);
     });
+};
+
+
+/*
+  Deletes a particular task and adjusts the service so that
+  it won't create a new one in its place.
+*/
+exports.deleteTask = (event, context, callback) => {
+    var AWS = require('aws-sdk'),
+        ecs = new AWS.ECS({"apiVersion": '2014-11-13'}),
+        cluster = process.env.CLUSTERNAME,
+        task = event.taskArn;
+
+    /*
+     Terrible, but the only way to find the service associated with
+     the given taskArn is to list all services and then issue
+     separate "listTasks" commands for each of them, only to filter
+     them down to the one which actually has the given taskArn.
+    */
+    ecs.listServices({cluster}).promise()
+    .then((services) =>
+        Q.all(services.serviceArns.map((serviceName) =>
+            ecs.listTasks({ cluster, serviceName }).promise()
+            .then((data) => ({ serviceName, taskArns: data.taskArns }))
+        ))
+    )
+    .then((serviceTasks) => serviceTasks.filter(
+        (st) => st.taskArns.filter(
+            (taskArn) => taskArn === task
+        ).length
+    ))
+    .then((serviceTasks) =>
+        serviceTasks.length === 1 ?
+            Q.all([
+                ecs.stopTask({ cluster, task }).promise(),
+                ecs.updateService({
+                    cluster,
+                    service: serviceTasks[0].serviceName,
+                    desiredCount: serviceTasks[0].taskArns.length-1,
+                }).promise()
+            ]) : null
+    )
+    .then((result) => callback(null, result));
 };
 
 /**
@@ -126,6 +169,10 @@ exports.getAllHostsForContainerType = (cluster, containerType) => {
     .then(
         (containersForName) => containersForName.map(
             (container) => ({
+                connection_meta: JSON.stringify({
+                    type: "ecs",
+                    taskArn: container.taskArn
+                }),
                 // assumes that this container has exactly one network binding
                 port: container.networkBindings[0].hostPort,
                 ip: container.containerInstanceDetails.ec2Instance.PrivateIpAddress

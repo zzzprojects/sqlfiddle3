@@ -107,6 +107,25 @@ Create IAM roles for Lambda execution and ecs/ec2 scaling:
 
 Register Lambda functions which will keep your host database environments fresh:
 
+    aws lambda create-function --function-name addTask \
+        --runtime nodejs6.10 --role $HOST_MAINTENANCE_ROLE_ARN \
+        --handler manageECS.addTask --timeout 10 \
+        --environment Variables="{CLUSTERNAME=sqlfiddle3}" \
+        --zip-file fileb://appServer/target/sqlfiddle-lambda.zip
+
+    aws lambda create-function --function-name deleteTask \
+        --runtime nodejs6.10 --role $HOST_MAINTENANCE_ROLE_ARN \
+        --handler manageECS.deleteTask --timeout 10 \
+        --environment Variables="{CLUSTERNAME=sqlfiddle3}" \
+        --zip-file fileb://appServer/target/sqlfiddle-lambda.zip
+
+    aws lambda create-function --function-name checkForOverusedHosts \
+        --runtime nodejs6.10 --role $HOST_MAINTENANCE_ROLE_ARN \
+        --handler hostMaintenance.checkForOverusedHosts \
+        --environment Variables="{postgresHost=$APP_DATABASE_IP,postgresUser=postgres,postgresPassword=password,MAX_SCHEMAS_PER_HOST=100}" \
+        --zip-file fileb://appServer/target/sqlfiddle-lambda.zip \
+        --vpc-config SubnetIds=$SUBNET_ID_FIRST,$SUBNET_ID_ADDITIONAL,SecurityGroupIds=$SECURITY_GROUP_ID
+
     aws lambda create-function --function-name syncHosts \
         --runtime nodejs6.10 --role $HOST_MAINTENANCE_ROLE_ARN \
         --handler hostMaintenance.syncHosts \

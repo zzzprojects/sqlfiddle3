@@ -100,7 +100,9 @@ CREATE TABLE hosts (
     jdbc_url_template character varying(150),
     default_database character varying(50),
     admin_username character varying(50),
-    admin_password character varying(50)
+    admin_password character varying(50),
+    connection_meta character varying(250),
+    pending_removal boolean default FALSE
 );
 
 
