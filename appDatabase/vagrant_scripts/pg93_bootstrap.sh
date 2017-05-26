@@ -22,7 +22,7 @@ pg_dropcluster --stop 9.3 main
 echo "listen_addresses = '*'" >> /etc/postgresql-common/createcluster.conf
 echo "max_connections = 500" >> /etc/postgresql-common/createcluster.conf
 pg_createcluster --start -e UTF-8 --locale en_US.UTF-8 9.3 main -- --auth-local=trust
-echo "host    all             all             10.0.0.0/16            md5" >> /etc/postgresql/9.3/main/pg_hba.conf
+echo "host    all             all             10.1.0.0/16            md5" >> /etc/postgresql/9.3/main/pg_hba.conf
 service postgresql reload
 
 echo "alter user postgres with password 'password';" | psql -U postgres

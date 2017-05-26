@@ -60,7 +60,7 @@ If you want to run the commercial database software (Microsoft SQL Server 2014 E
 
 ## Setting up in Amazon Web Services
 
-Install the AWS command line tools and the "jq" json utility
+Install the AWS command line tools
 
 Build the images if you haven't done the above:
 
@@ -71,19 +71,60 @@ Set your core env variables necessary for working with your AWS account:
     export REGION=your region (for example, us-west-2)
     export AWS_ACCESS_KEY_ID=your access key
     export AWS_SECRET_ACCESS_KEY=your secret key
-    export VPC_ID=existing vpc identifier; compute resources will run within this vpc
-    export SECURITY_GROUP_ID=your existing security group identifier
-    export SUBNET_ID_FIRST=a subnet identifier within the above vpc
-    export SUBNET_ID_ADDITIONAL=additional subnet identifier within the above vpc, but in a different availability zone from the first
-    export KEYPAIR=your ec2 keypair
-    export AWS_ACCOUNT_ID=`aws ec2 describe-security-groups --query 'SecurityGroups[0].OwnerId' --output text`
+    export KEYPAIR=your ec2 keypair (.pem file)
+    export AWS_ACCOUNT_ID=`aws ec2 describe-security-groups \
+        --query 'SecurityGroups[0].OwnerId' --output text`
+
+Create a VPC to house the compute resources:
+
+    export IP_ALLOCATION_ID=`aws ec2 allocate-address --domain vpc \
+        --query AllocationId --output text`
+
+    export VPC_ID=`aws ec2 create-vpc --cidr-block 10.1.0.0/16 \
+        --query Vpc.VpcId --output text`
+
+    export ROUTE_TABLE_ID=`aws ec2 describe-route-tables \
+        --filter Name=vpc-id,Values=$VPC_ID --query RouteTables[0].RouteTableId --output text`
+
+    export IGW_ID=`aws ec2 create-internet-gateway \
+        --query InternetGateway.InternetGatewayId --output text`
+
+    aws ec2 attach-internet-gateway --internet-gateway-id $IGW_ID --vpc-id $VPC_ID
+
+    export SUBNET_ID_FIRST=`aws ec2 create-subnet --vpc-id $VPC_ID \
+        --cidr-block 10.1.0.0/24 --availability-zone ${REGION}a \
+        --query Subnet.SubnetId --output text`
+
+    export SUBNET_ID_ADDITIONAL=`aws ec2 create-subnet --vpc-id $VPC_ID \
+        --cidr-block 10.1.1.0/24 --availability-zone ${REGION}b \
+        --query Subnet.SubnetId --output text`
+
+    aws ec2 associate-route-table --subnet-id $SUBNET_ID_FIRST --route-table-id $ROUTE_TABLE_ID
+
+    aws ec2 associate-route-table --subnet-id $SUBNET_ID_ADDITIONAL --route-table-id $ROUTE_TABLE_ID
+
+    aws ec2 create-route --route-table-id $ROUTE_TABLE_ID \
+        --gateway-id $IGW_ID --destination-cidr-block 0.0.0.0/0
+
+    export SECURITY_GROUP_ID=`aws ec2 create-security-group --vpc-id $VPC_ID \
+        --group-name sqlfiddle_group --description "Rules for SQLFiddle Resources" \
+        --query GroupId --output text`
+
+    aws ec2 authorize-security-group-ingress --group-id $SECURITY_GROUP_ID \
+        --protocol tcp --port 80 --cidr 0.0.0.0/0
+
+    aws ec2 authorize-security-group-ingress --group-id $SECURITY_GROUP_ID \
+        --protocol tcp --port 22 --cidr 0.0.0.0/0
+
+    aws ec2 authorize-security-group-ingress --group-id $SECURITY_GROUP_ID \
+        --cidr 10.1.0.0/16 --protocol all
 
 Install Vagrant (https://www.vagrantup.com) and the vagrant-aws plugin. See the plugin site here for details: https://github.com/mitchellh/vagrant-aws
 
 Use vagrant to create a dedicated EC2 instance to run the persisted PostgreSQL appDatabase:
 
-    export APP_DATABASE_IP=private ip within SUBNET_ID_FIRST (for example, if mask is 10.0.0.0/24 then 10.0.0.16)
-    export AVAILABILITY_ZONE=AZ within the $REGION (for example, us-west-2b)
+    export APP_DATABASE_IP=10.1.0.16
+    export AVAILABILITY_ZONE=${REGION}a
     export PATH_TO_KEYPAIR_PEM=full path to the above $KEYPAIR pem
     (cd appDatabase; vagrant up --provider=aws)
 
@@ -96,7 +137,8 @@ Create IAM roles for Lambda execution and ecs/ec2 scaling:
     aws iam create-instance-profile --instance-profile-name hostMaintenance
 
     export HOST_MAINTENANCE_ROLE_ARN=`aws iam create-role --role-name hostMaintenance \
-      --assume-role-policy-document file://aws/iam_trust_policy.json | jq .Role.Arn -r`
+      --assume-role-policy-document file://aws/iam_trust_policy.json \
+      --query Role.Arn --output text`
 
     aws iam put-role-policy --role-name hostMaintenance \
       --policy-name hostMaintenance --policy-document file://aws/iam_policy.json
@@ -138,17 +180,21 @@ Register Lambda functions which will keep your host database environments fresh:
         --handler manageECS.updateHostRegistry --timeout 10 \
         --environment Variables="{CLUSTERNAME=sqlfiddle3}" \
         --zip-file fileb://appServer/target/sqlfiddle-lambda.zip \
-        | jq .FunctionArn -r`
-
+        --query FunctionArn --output text`
 
 Create an API Gateway interface to the above Lambda function:
 
-    export API_GATEWAY_ID=`aws apigateway create-rest-api --name SQLFiddleLambda | jq .id -r`
+    export API_GATEWAY_ID=`aws apigateway create-rest-api --name SQLFiddleLambda \
+      --query id --output text`
+
     export API_ROOT_RESOURCE_ID=`aws apigateway get-resources \
-      --rest-api-id $API_GATEWAY_ID | jq .items[0].id -r`
+      --rest-api-id $API_GATEWAY_ID --query items[0].id --output text`
+
     export API_RESOURCE_ID=`aws apigateway create-resource \
       --rest-api-id $API_GATEWAY_ID \
-      --parent-id $API_ROOT_RESOURCE_ID --path 'updateHostRegistry' | jq .id -r`
+      --parent-id $API_ROOT_RESOURCE_ID --path 'updateHostRegistry' \
+      --query id --output text`
+
     aws apigateway put-method --rest-api-id $API_GATEWAY_ID \
       --resource-id $API_RESOURCE_ID \
       --http-method GET \
@@ -181,14 +227,13 @@ Create an API Gateway interface to the above Lambda function:
         --principal apigateway.amazonaws.com \
         --source-arn "arn:aws:execute-api:$REGION:$AWS_ACCOUNT_ID:$API_GATEWAY_ID/*/*/updateHostRegistry"
 
-
     export LAMBDA_NOTIFICATION_URL="https://$API_GATEWAY_ID.execute-api.$REGION.amazonaws.com/prod/updateHostRegistry"
 
 Create a new ECR repository ('sqlfiddle'):
 
     eval $(aws ecr get-login --region $REGION)
     export ECR_URI=`aws ecr create-repository --repository-name sqlfiddle \
-      | jq .repository.repositoryUri`
+      --query repository.repositoryUri --output text`
 
 Upload the docker images to ECR:
 
@@ -205,7 +250,7 @@ Configure your ecs-cli environment to work with this cluster:
     ecs-cli configure --region $REGION --access-key $AWS_ACCESS_KEY_ID \
       --secret-key $AWS_SECRET_ACCESS_KEY --cluster sqlfiddle3
 
-Start the cluster with two t2.medium container instances, spread between subnets (each subnet should be in a different availability zone)
+Start the cluster with two t2.medium container instances, spread between the subnets:
 
     ecs-cli up --keypair $KEYPAIR -capability-iam --size 2 \
       --instance-type t2.medium --security-group $SECURITY_GROUP_ID \
@@ -225,11 +270,11 @@ Create an Application Load Balancer to access the appServer services:
     export ELB_ARN=`aws elbv2 create-load-balancer --name sqlfiddle3ELB \
       --subnets $SUBNET_ID_FIRST $SUBNET_ID_ADDITIONAL \
       --security-groups $SECURITY_GROUP_ID \
-      | jq .LoadBalancers[0].LoadBalancerArn -r`
+      --query LoadBalancers[0].LoadBalancerArn --output text`
 
     export TARGET_GROUP_ARN=`aws elbv2 create-target-group \
       --name appServerGroup --protocol HTTP --port 80 --vpc-id $VPC_ID \
-      | jq .TargetGroups[0].TargetGroupArn -r`
+      --query TargetGroups[0].TargetGroupArn --output text`
 
     aws elbv2 create-listener --load-balancer-arn $ELB_ARN \
       --default-actions Type=forward,TargetGroupArn=$TARGET_GROUP_ARN \
@@ -248,7 +293,7 @@ Bring the appServer instances up:
 Get the DNS entry needed to access the cluster:
 
     aws elbv2 describe-load-balancers --load-balancer-arns $ELB_ARN \
-      | jq .LoadBalancers[0].DNSName -r
+       --query LoadBalancers[0].DNSName --output text
 
 Use the output from that command to view the running application in your browser. For example,
  http://sqlfiddle3ELB-987654321.us-west-2.elb.amazonaws.com/
