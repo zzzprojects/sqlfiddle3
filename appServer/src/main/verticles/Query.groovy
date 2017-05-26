@@ -153,7 +153,11 @@ class Query {
                         })
                     })
                 },
-                fn)
+                {
+                    fn([
+                        "error": it
+                    ])
+                })
             } else {
                 def host = new Host(this.schemaDef.getCurrentHostId())
                 host.getUserHostConnection(this.vertx, this.schemaDef.getDatabaseName(), { hostConnection ->

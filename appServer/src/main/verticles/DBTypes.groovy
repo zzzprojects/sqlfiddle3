@@ -75,6 +75,9 @@ class DBTypes {
                         coalesce((SELECT count(s.id) FROM schema_defs s WHERE s.current_host_id = h2.id), 0) <
                         coalesce((SELECT count(s.id) FROM schema_defs s WHERE s.current_host_id = h.id), 0)
                 )
+            ORDER BY
+                random()
+            LIMIT 1
         """, [db_type_id], { result ->
             if (result != null) {
                 successHandler(new Host((Map) result))
