@@ -71,40 +71,61 @@ Set your core env variables necessary for working with your AWS account:
     export REGION=your region (for example, us-west-2)
     export AWS_ACCESS_KEY_ID=your access key
     export AWS_SECRET_ACCESS_KEY=your secret key
-    export KEYPAIR=your ec2 keypair (.pem file)
+    export KEYPAIR=your ec2 keypair name
+    export PATH_TO_KEYPAIR_PEM=full path to the above $KEYPAIR pem
     export AWS_ACCOUNT_ID=`aws ec2 describe-security-groups \
         --query 'SecurityGroups[0].OwnerId' --output text`
 
 Create a VPC to house the compute resources:
 
-    export IP_ALLOCATION_ID=`aws ec2 allocate-address --domain vpc \
-        --query AllocationId --output text`
-
     export VPC_ID=`aws ec2 create-vpc --cidr-block 10.1.0.0/16 \
         --query Vpc.VpcId --output text`
-
-    export ROUTE_TABLE_ID=`aws ec2 describe-route-tables \
-        --filter Name=vpc-id,Values=$VPC_ID --query RouteTables[0].RouteTableId --output text`
 
     export IGW_ID=`aws ec2 create-internet-gateway \
         --query InternetGateway.InternetGatewayId --output text`
 
     aws ec2 attach-internet-gateway --internet-gateway-id $IGW_ID --vpc-id $VPC_ID
 
-    export SUBNET_ID_FIRST=`aws ec2 create-subnet --vpc-id $VPC_ID \
+    export ROUTE_TABLE_ID_PUBLIC=`aws ec2 describe-route-tables \
+        --filter Name=vpc-id,Values=$VPC_ID --query RouteTables[0].RouteTableId --output text`
+
+    export SUBNET_ID_PUBLIC=`aws ec2 create-subnet --vpc-id $VPC_ID \
         --cidr-block 10.1.0.0/24 --availability-zone ${REGION}a \
         --query Subnet.SubnetId --output text`
 
-    export SUBNET_ID_ADDITIONAL=`aws ec2 create-subnet --vpc-id $VPC_ID \
+    export SUBNET_ID_PUBLIC_ADDITIONAL=`aws ec2 create-subnet --vpc-id $VPC_ID \
+        --cidr-block 10.1.2.0/24 --availability-zone ${REGION}c \
+        --query Subnet.SubnetId --output text`
+
+    aws ec2 associate-route-table --subnet-id $SUBNET_ID_PUBLIC \
+        --route-table-id $ROUTE_TABLE_ID_PUBLIC
+
+    aws ec2 associate-route-table --subnet-id $SUBNET_ID_PUBLIC_ADDITIONAL \
+        --route-table-id $ROUTE_TABLE_ID_PUBLIC
+
+    aws ec2 create-route --route-table-id $ROUTE_TABLE_ID_PUBLIC \
+        --gateway-id $IGW_ID --destination-cidr-block 0.0.0.0/0
+
+    export IP_ALLOCATION_ID=`aws ec2 allocate-address --domain vpc \
+        --query AllocationId --output text`
+
+    export ROUTE_TABLE_ID_PRIVATE=`aws ec2 create-route-table --vpc-id $VPC_ID \
+        --query RouteTable.RouteTableId --output text`
+
+    export SUBNET_ID_PRIVATE=`aws ec2 create-subnet --vpc-id $VPC_ID \
         --cidr-block 10.1.1.0/24 --availability-zone ${REGION}b \
         --query Subnet.SubnetId --output text`
 
-    aws ec2 associate-route-table --subnet-id $SUBNET_ID_FIRST --route-table-id $ROUTE_TABLE_ID
+    aws ec2 associate-route-table --subnet-id $SUBNET_ID_PRIVATE \
+        --route-table-id $ROUTE_TABLE_ID_PRIVATE
 
-    aws ec2 associate-route-table --subnet-id $SUBNET_ID_ADDITIONAL --route-table-id $ROUTE_TABLE_ID
+    export NAT_GW_ID=`aws ec2 create-nat-gateway --subnet-id $SUBNET_ID_PUBLIC \
+        --allocation-id $IP_ALLOCATION_ID --query NatGateway.NatGatewayId --output text`
 
-    aws ec2 create-route --route-table-id $ROUTE_TABLE_ID \
-        --gateway-id $IGW_ID --destination-cidr-block 0.0.0.0/0
+Wait here a few moments. Creating the NAT Gateway takes some time
+
+    aws ec2 create-route --route-table-id $ROUTE_TABLE_ID_PRIVATE \
+        --gateway-id $NAT_GW_ID --destination-cidr-block 0.0.0.0/0
 
     export SECURITY_GROUP_ID=`aws ec2 create-security-group --vpc-id $VPC_ID \
         --group-name sqlfiddle_group --description "Rules for SQLFiddle Resources" \
@@ -119,13 +140,14 @@ Create a VPC to house the compute resources:
     aws ec2 authorize-security-group-ingress --group-id $SECURITY_GROUP_ID \
         --cidr 10.1.0.0/16 --protocol all
 
+
+
 Install Vagrant (https://www.vagrantup.com) and the vagrant-aws plugin. See the plugin site here for details: https://github.com/mitchellh/vagrant-aws
 
 Use vagrant to create a dedicated EC2 instance to run the persisted PostgreSQL appDatabase:
 
     export APP_DATABASE_IP=10.1.0.16
     export AVAILABILITY_ZONE=${REGION}a
-    export PATH_TO_KEYPAIR_PEM=full path to the above $KEYPAIR pem
     (cd appDatabase; vagrant up --provider=aws)
 
 This will also setup a daily full backup of the database to write to your S3 account (see appDatabase/vagrant_scripts/s3_backup.sh and s3cfg_template for details).
@@ -147,7 +169,7 @@ Create IAM roles for Lambda execution and ecs/ec2 scaling:
       --instance-profile-name hostMaintenance \
       --role-name hostMaintenance
 
-Register Lambda functions which will keep your host database environments fresh:
+Create Lambda functions which will register your host database servers and keep them fresh:
 
     aws lambda create-function --function-name addTask \
         --runtime nodejs6.10 --role $HOST_MAINTENANCE_ROLE_ARN \
@@ -163,17 +185,17 @@ Register Lambda functions which will keep your host database environments fresh:
 
     aws lambda create-function --function-name checkForOverusedHosts \
         --runtime nodejs6.10 --role $HOST_MAINTENANCE_ROLE_ARN \
-        --handler hostMaintenance.checkForOverusedHosts \
+        --handler hostMaintenance.checkForOverusedHosts --timeout 10 \
         --environment Variables="{postgresHost=$APP_DATABASE_IP,postgresUser=postgres,postgresPassword=password,MAX_SCHEMAS_PER_HOST=100}" \
         --zip-file fileb://appServer/target/sqlfiddle-lambda.zip \
-        --vpc-config SubnetIds=$SUBNET_ID_FIRST,$SUBNET_ID_ADDITIONAL,SecurityGroupIds=$SECURITY_GROUP_ID
+        --vpc-config SubnetIds=$SUBNET_ID_PRIVATE,SecurityGroupIds=$SECURITY_GROUP_ID
 
     aws lambda create-function --function-name syncHosts \
         --runtime nodejs6.10 --role $HOST_MAINTENANCE_ROLE_ARN \
-        --handler hostMaintenance.syncHosts \
+        --handler hostMaintenance.syncHosts --timeout 10 \
         --environment Variables="{postgresHost=$APP_DATABASE_IP,postgresUser=postgres,postgresPassword=password}" \
         --zip-file fileb://appServer/target/sqlfiddle-lambda.zip \
-        --vpc-config SubnetIds=$SUBNET_ID_FIRST,$SUBNET_ID_ADDITIONAL,SecurityGroupIds=$SECURITY_GROUP_ID
+        --vpc-config SubnetIds=$SUBNET_ID_PRIVATE,SecurityGroupIds=$SECURITY_GROUP_ID
 
     export LAMBDA_ARN=`aws lambda create-function --function-name updateHostRegistry \
         --runtime nodejs6.10 --role $HOST_MAINTENANCE_ROLE_ARN \
@@ -182,7 +204,7 @@ Register Lambda functions which will keep your host database environments fresh:
         --zip-file fileb://appServer/target/sqlfiddle-lambda.zip \
         --query FunctionArn --output text`
 
-Create an API Gateway interface to the above Lambda function:
+Create an API Gateway interface to the above Lambda function (updateHostRegistry):
 
     export API_GATEWAY_ID=`aws apigateway create-rest-api --name SQLFiddleLambda \
       --query id --output text`
@@ -254,7 +276,7 @@ Start the cluster with two t2.medium container instances, spread between the sub
 
     ecs-cli up --keypair $KEYPAIR -capability-iam --size 2 \
       --instance-type t2.medium --security-group $SECURITY_GROUP_ID \
-      --vpc $VPC_ID --subnets $SUBNET_ID_FIRST,$SUBNET_ID_ADDITIONAL --force
+      --vpc $VPC_ID --subnets $SUBNET_ID_PUBLIC,$SUBNET_ID_PUBLIC_ADDITIONAL --force
 
 Bring the database services up:
 
@@ -268,7 +290,7 @@ When these come online, they will issue a request to the above Lambda function (
 Create an Application Load Balancer to access the appServer services:
 
     export ELB_ARN=`aws elbv2 create-load-balancer --name sqlfiddle3ELB \
-      --subnets $SUBNET_ID_FIRST $SUBNET_ID_ADDITIONAL \
+      --subnets $SUBNET_ID_PUBLIC $SUBNET_ID_PUBLIC_ADDITIONAL \
       --security-groups $SECURITY_GROUP_ID \
       --query LoadBalancers[0].LoadBalancerArn --output text`
 

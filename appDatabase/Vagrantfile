@@ -15,7 +15,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
         aws.availability_zone = ENV['AVAILABILITY_ZONE']
         aws.instance_type = "t2.medium"
         aws.associate_public_ip = true
-        aws.subnet_id = ENV['SUBNET_ID_FIRST']
+        aws.subnet_id = ENV['SUBNET_ID_PUBLIC']
         aws.security_groups = ENV['SECURITY_GROUP_ID']
         aws.keypair_name = ENV['KEYPAIR']
 

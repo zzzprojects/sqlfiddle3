@@ -103,11 +103,12 @@ var scaleUpHost = (full_name) => {
                 serviceName: "ecscompose-service-postgresql93"
             })
         }
-    };
+    },
+    deferred = Q.defer();
 
-    AWS.config.setPromisesDependency(Q.Promise);
+    lambda.invoke(nameToScaleFunction[full_name], (err, data) => err ? deferred.reject(err) : deferred.resolve(data));
 
-    return lambda.invoke(nameToScaleFunction[full_name]).promise();
+    return deferred;
 };
 
 
@@ -209,8 +210,8 @@ exports.checkForOverusedHosts = (event, context, callback) => {
             )
             .then((results) => {
                 client.end();
-                callback(null, results);
-            })
+                return callback(null, results);
+            }, (error) => callback(error))
         );
     });
 };
@@ -291,10 +292,11 @@ exports.syncHosts = (event, context, callback) => {
 
             return Q.all(promises);
         })
-        .then((syncChanges) => {
-            deprovisionHostsPendingRemoval(client);
-            return syncChanges;
-        })
+        .then((syncChanges) =>
+            deprovisionHostsPendingRemoval(client).then((results) =>
+                syncChanges.concat(results)
+            )
+        )
         .then((syncChanges) => {
             client.end();
             callback(null, syncChanges);
