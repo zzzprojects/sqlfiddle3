@@ -124,7 +124,7 @@ var scaleDownHost = (host) => {
 
     return lambda.invoke({
         FunctionName: typeFunctions[meta.type],
-        Payload: meta
+        Payload: host.connection_meta
     }).promise();
 };
 
@@ -153,9 +153,9 @@ var deprovisionHostsPendingRemoval = (client) =>
                     pending_removal = FALSE
             ) > 0
     `).then((result) =>
-        result.rows.map((host) =>
+        Q.all(result.rows.map((host) =>
             deleteHost(client, host).then(() => scaleDownHost(host))
-        )
+        ))
     );
 
 /**
