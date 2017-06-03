@@ -102,6 +102,7 @@ exports.updateHostRegistry = (event, context, callback) => {
  * @returns {Promise} - promise resolved with a list of ip/port combinations found for this container name, like so:
     [
       {
+        "connection_meta": "{\"type\":\"ecs\",\"taskArn\":\"arn:aws:ecs:u..\"}",
         "port": 32769,
         "ip": "10.0.1.49"
       }
