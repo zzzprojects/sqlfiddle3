@@ -183,12 +183,14 @@ Create Lambda functions which will register your host database servers and keep 
         --environment Variables="{CLUSTERNAME=sqlfiddle3}" \
         --zip-file fileb://appServer/target/sqlfiddle-lambda.zip
 
-    aws lambda create-function --function-name checkForOverusedHosts \
+    export OVERUSED_HOSTS_ARN=`aws lambda create-function \
+        --function-name checkForOverusedHosts \
         --runtime nodejs6.10 --role $HOST_MAINTENANCE_ROLE_ARN \
         --handler hostMaintenance.checkForOverusedHosts --timeout 10 \
         --environment Variables="{postgresHost=$APP_DATABASE_IP,postgresUser=postgres,postgresPassword=password,MAX_SCHEMAS_PER_HOST=100}" \
         --zip-file fileb://appServer/target/sqlfiddle-lambda.zip \
-        --vpc-config SubnetIds=$SUBNET_ID_PRIVATE,SecurityGroupIds=$SECURITY_GROUP_ID
+        --vpc-config SubnetIds=$SUBNET_ID_PRIVATE,SecurityGroupIds=$SECURITY_GROUP_ID \
+        --query FunctionArn --output text`
 
     aws lambda create-function --function-name syncHosts \
         --runtime nodejs6.10 --role $HOST_MAINTENANCE_ROLE_ARN \
@@ -286,6 +288,15 @@ Bring the database services up:
       --project-name postgresql93 service up
 
 When these come online, they will issue a request to the above Lambda function (updateHostRegistry), registering themselves within the "hosts" table running on the appDatabase server. Once registered there, they will be usable to the appServer instances which will be created next.
+
+Schedule CloudWatch Events to monitor the tasks using the above Lambda functions, refreshing them as needed:
+
+    export EVENT_RULE_ARN=`aws events put-rule --name checkForOverusedHosts \
+        --schedule-expression "rate(5 minutes)" \
+        --role-arn $HOST_MAINTENANCE_ROLE_ARN --query RuleArn --output text`
+
+    aws events put-targets --rule checkForOverusedHosts \
+        --targets "Id=LambdaFunc,Arn=$OVERUSED_HOSTS_ARN"
 
 Create an Application Load Balancer to access the appServer services:
 

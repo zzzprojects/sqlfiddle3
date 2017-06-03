@@ -15,6 +15,14 @@
         "Service": "apigateway.amazonaws.com"
       },
       "Action": "sts:AssumeRole"
+    },
+    {
+      "Sid": "",
+      "Effect": "Allow",
+      "Principal": {
+        "Service": "events.amazonaws.com"
+      },
+      "Action": "sts:AssumeRole"
     }
   ]
 }
