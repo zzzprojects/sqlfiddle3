@@ -104,8 +104,8 @@ class Host {
                     password: databaseName,
                     initial_pool_size: 1,
                     min_pool_size: 1,
-                    max_pool_size: 2,
-                    max_idle_time: 60
+                    max_pool_size: 1,
+                    max_idle_time: 1
                 ],
                 "fiddle_" + databaseName,
                 fn
