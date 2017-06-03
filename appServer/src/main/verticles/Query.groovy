@@ -146,7 +146,7 @@ class Query {
                 schemaDef.buildRunningDatabase({ host, hostConnection ->
                     schemaDef.updateCurrentHost(host.host_id, {
                         this.executeSQLStatements(hostConnection, { results ->
-                            response.sets = results
+                            response.sets = results ?: []
                             hostConnection.close({
                                 fn(response)
                             })
@@ -162,11 +162,15 @@ class Query {
                 def host = new Host(this.schemaDef.getCurrentHostId())
                 host.getUserHostConnection(this.vertx, this.schemaDef.getDatabaseName(), { hostConnection ->
                     this.executeSQLStatements(hostConnection, { results ->
-                        response.sets = results
+                        response.sets = results ?: []
                         hostConnection.close({
                             fn(response)
                         })
                     })
+                }, {
+                    fn([
+                        "error": it
+                    ])
                 })
             }
         } else {

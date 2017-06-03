@@ -165,8 +165,8 @@ class SchemaDef {
                         fn([
                             _id: this.getDatabaseName(),
                             short_code: this.short_code,
-                            schema_structure: dbDetails.structure_json != null ?
-                                new JsonObject(dbDetails.structure_json) : null
+                            schema_structure: null //dbDetails.structure_json != null ?
+                                //new JsonObject(dbDetails.structure_json) : null
                         ])
                     } else {
                         this.context = dbDetails.context
@@ -347,12 +347,9 @@ class SchemaDef {
                                     })
 
                                 })
-                            }) // end host connection
-                        }, {
-                            // failed somehow to create host database....
-                            errorHandler(it)
-                        }) // end setup of host database
-                    }) // end admin connection
+                            }, errorHandler) // end host connection
+                        }, errorHandler) // end setup of host database
+                    }, errorHandler) // end admin connection
                 }, {
                     errorHandler("No host of this type available to create schema. Try using a different database version.")
                 }

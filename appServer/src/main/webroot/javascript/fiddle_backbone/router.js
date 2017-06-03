@@ -190,6 +190,7 @@ define([
                             });
 
                         } else { // context not "browser"
+                            resp["sets"] = resp["sets"] || [];
 
                             schemaDef.set({
                                 "short_code": resp["short_code"],

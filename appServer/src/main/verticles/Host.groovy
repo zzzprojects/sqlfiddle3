@@ -59,31 +59,34 @@ class Host {
         this.batch_separator = hostDetails.batch_separator
     }
 
-    private getHostConnection(vertx, connectionDetails, connectionName, fn) {
+    private getHostConnection(vertx, connectionDetails, successHandler, errorHandler) {
         JDBCClient
-                .createShared(vertx, connectionDetails, connectionName)
+                .createNonShared(vertx, connectionDetails)
                 .getConnection({ hostConnectionHandler ->
             if (hostConnectionHandler.succeeded()) {
-                fn(hostConnectionHandler.result())
+                successHandler(hostConnectionHandler.result())
             } else {
-                throw new Exception("Unable to get connection: " +
-                        hostConnectionHandler.cause().getMessage())
+                errorHandler("Unable to get host connection: " + hostConnectionHandler.cause().getMessage())
             }
 
         })
     }
 
-    def getAdminHostConnection(vertx, fn) {
+    def getAdminHostConnection(vertx, successHandler, errorHandler) {
         def readyFunction = {
             this.getHostConnection(vertx,
                 [
                     url: this.jdbc_url_template.replace("#databaseName#", this.default_database),
                     driver_class: this.jdbc_class_name,
                     user: this.admin_username,
-                    password: this.admin_password
+                    password: this.admin_password,
+                    initial_pool_size: 1,
+                    min_pool_size: 1,
+                    max_pool_size: 1,
+                    max_idle_time: 1
                 ],
-                "admin_" + this.host_id,
-                fn
+                successHandler,
+                errorHandler
             )
         }
         if (!this.jdbc_url_template) {
@@ -93,7 +96,7 @@ class Host {
         }
     }
 
-    def getUserHostConnection(vertx, databaseName, fn) {
+    def getUserHostConnection(vertx, databaseName, successHandler, errorHandler) {
         def readyFunction = {
             this.getHostConnection(vertx,
                 [
@@ -107,8 +110,8 @@ class Host {
                     max_pool_size: 1,
                     max_idle_time: 1
                 ],
-                "fiddle_" + databaseName,
-                fn
+                successHandler,
+                errorHandler
             )
         }
         if (!this.jdbc_url_template) {

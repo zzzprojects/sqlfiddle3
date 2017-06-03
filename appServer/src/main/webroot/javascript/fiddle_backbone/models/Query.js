@@ -55,7 +55,7 @@ define(["./OpenIDMResource", "Backbone"], function (idm, Backbone) {
                 } else {
                     thisModel.set({
                         "id": resp["ID"],
-                        "sets": resp["sets"]
+                        "sets": resp["sets"] || []
                     });
                 }
             },
