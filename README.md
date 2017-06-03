@@ -32,14 +32,11 @@ Then you can access the site by visiting http://192.168.99.101:8080
 
 *requires local install of PostgreSQL, MySQL and Vert.x*
 
-    $ cd appServer
-    $ mvn clean package
-    $ (cd target; grunt) &
-    $ cd target/docker
     # next line is for connecting with a remote debugger such as IntelliJ
-    $ export VERTX_OPTS='-Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=n,address=5005'
-    $ export CLASSPATH=.:lib/*
-    $ vertx run sqlfiddle.groovy
+    export VERTX_OPTS='-Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=n,address=5005'
+    (cd appServer; mvn clean package)
+    (cd appServer/target; grunt) &
+    (cd appServer/target/docker; CLASSPATH=.:lib/* vertx run sqlfiddle.groovy)
 
 ## Commercial software requirements
 

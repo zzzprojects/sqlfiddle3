@@ -6,8 +6,8 @@ services:
     - "8080:8080"
     - "5005:5005"
     extra_hosts:
-     - "sqlserver2014Host:192.168.99.102"
-     - "oracle11gHost:192.168.99.102"
+     - "sqlserver2014Host:192.168.99.101"
+     - "oracle11gHost:192.168.99.101"
   appDatabase:
     build:
       context: ./appDatabase

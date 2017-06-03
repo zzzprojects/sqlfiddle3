@@ -16,9 +16,9 @@ module.exports = function(grunt) {
             },
             verticles: {
                 files: [{
-                    cwd     : "src/main/verticles",
+                    cwd     : "../src/main/verticles",
                     src     : ['**/*'],
-                    dest    : "target/docker",
+                    dest    : "docker",
                     flatten : false,
                     expand  : true
                 }]
@@ -96,7 +96,7 @@ module.exports = function(grunt) {
                 tasks: ['sync:webroot']
             },
             copyVerticles: {
-                files: ["src/main/verticles/**"],
+                files: ["../src/main/verticles/**"],
                 tasks: ['sync:verticles']
             }
         }
