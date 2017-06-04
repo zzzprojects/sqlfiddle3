@@ -61,7 +61,7 @@ class DatabaseClient {
 
         // run the provided ddl to setup the database environment...
         if (batch_separator && batch_separator.size()) {
-            statements = statements.replaceAll(Pattern.compile(newline + batch_separator + carrageReturn + "?(" + newline + '|$)', Pattern.CASE_INSENSITIVE), statement_separator)
+            statements = statements.replaceAll(Pattern.compile(newline + batch_separator + carrageReturn + "?(" + newline + '|$)', Pattern.CASE_INSENSITIVE), statement_separator + newline)
         }
 
         // this monster regexp parses the query block by breaking it up into statements, each with three groups -
