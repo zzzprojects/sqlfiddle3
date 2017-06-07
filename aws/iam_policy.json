@@ -7,7 +7,9 @@
                 "ecs:*",
                 "vpc:*",
                 "ec2:*",
-                "lambda:InvokeFunction"
+                "lambda:InvokeFunction",
+                "logs:*",
+                "apigateway:*"
             ],
             "Resource": [
                 "*"

@@ -26,6 +26,22 @@ var getHostTemplate = (hostType, ipAddress, port, connection_meta) => {
             "admin_username": "postgres",
             "admin_password": "password",
             connection_meta
+        },
+        "oracle11g": {
+            "full_name": "Oracle 11g R2",
+            "jdbc_url_template": `jdbc:oracle:thin:@//${ipAddress}:${port}/xe`,
+            "default_database": "XE",
+            "admin_username": "system",
+            "admin_password": "password",
+            connection_meta
+        },
+        "sqlserver2014": {
+            "full_name": "MS SQL Server 2014",
+            "jdbc_url_template": `jdbc:jtds:sqlserver://${ipAddress}:${port}/#databaseName#`,
+            "default_database": "master",
+            "admin_username": "sa",
+            "admin_password": "SQLServerPassword",
+            connection_meta
         }
     };
 
@@ -79,18 +95,18 @@ var scaleUpHost = (full_name) => {
     var AWS = require('aws-sdk'),
         lambda = new AWS.Lambda({"apiVersion": '2015-03-31'})
         nameToScaleFunction = {
-        /*"Oracle 11g R2" : {
-            "functionName": "",
-            "arguments": ""
+        "Oracle 11g R2" : {
+            FunctionName: "runInstanceType",
+            Payload: JSON.stringify({
+                type: "oracle11g"
+            })
         },
         "MS SQL Server 2014" : {
-            "functionName": "",
-            "arguments": ""
+            FunctionName: "runInstanceType",
+            Payload: JSON.stringify({
+                type: "sqlserver2014"
+            })
         },
-        "MS SQL Server 2008" : {
-            "functionName": "",
-            "arguments": ""
-        },*/
         "MySQL 5.6" : {
             FunctionName: "addTask",
             Payload: JSON.stringify({
@@ -117,7 +133,8 @@ var scaleDownHost = (host) => {
         lambda = new AWS.Lambda({"apiVersion": '2015-03-31'}),
         meta = JSON.parse(host.connection_meta),
         typeFunctions = {
-            "ecs" : "deleteTask"
+            "ecs" : "deleteTask",
+            "ec2" : "terminateInstance"
         };
 
     AWS.config.setPromisesDependency(Q.Promise);

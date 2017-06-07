@@ -73,6 +73,11 @@ Set your core env variables necessary for working with your AWS account:
     export AWS_ACCOUNT_ID=`aws ec2 describe-security-groups \
         --query 'SecurityGroups[0].OwnerId' --output text`
 
+If you are going to run Oracle, MS SQL Server, etc... specify the amis for the host servers:
+
+    export SQLSERVER2014_AMI=your sql server 2014 ami
+    export ORACLE11G_AMI=your oracle11g ami
+
 Create a VPC to house the compute resources:
 
     export VPC_ID=`aws ec2 create-vpc --cidr-block 10.1.0.0/16 \
@@ -180,6 +185,26 @@ Create Lambda functions which will register your host database servers and keep 
         --environment Variables="{CLUSTERNAME=sqlfiddle3}" \
         --zip-file fileb://appServer/target/sqlfiddle-lambda.zip
 
+    export REGISTER_INSTANCE_ARN=`aws lambda create-function \
+        --function-name registerInstance \
+        --runtime nodejs6.10 --role $HOST_MAINTENANCE_ROLE_ARN \
+        --handler manageEC2.registerInstance --timeout 10 \
+        --environment Variables="{SQLSERVER2014_AMI=ami-892d0db9,ORACLE11G_AMI=ami-892d0db9-b,VPC_ID=${VPC_ID}}" \
+        --zip-file fileb://appServer/target/sqlfiddle-lambda.zip \
+        --query FunctionArn --output text`
+
+    aws lambda create-function --function-name runInstanceType \
+        --runtime nodejs6.10 --role $HOST_MAINTENANCE_ROLE_ARN \
+        --handler manageEC2.runInstanceType --timeout 10 \
+        --environment Variables="{SQLSERVER2014_AMI=ami-892d0db9,ORACLE11G_AMI=ami-892d0db9,SUBNET_ID=${SUBNET_ID_PUBLIC}}" \
+        --zip-file fileb://appServer/target/sqlfiddle-lambda.zip
+
+    aws lambda create-function --function-name terminateInstance \
+        --runtime nodejs6.10 --role $HOST_MAINTENANCE_ROLE_ARN \
+        --handler manageEC2.terminateInstance --timeout 10 \
+        --zip-file fileb://appServer/target/sqlfiddle-lambda.zip
+
+
     export OVERUSED_HOSTS_ARN=`aws lambda create-function \
         --function-name checkForOverusedHosts \
         --runtime nodejs6.10 --role $HOST_MAINTENANCE_ROLE_ARN \
@@ -283,6 +308,18 @@ Bring the database services up:
       --project-name mysql56 service up
     ecs-cli compose --file aws/docker-compose-postgresql93.yml \
       --project-name postgresql93 service up
+
+Bring any commercial database servers that are running on EC2 hosts (not docker containers):
+
+    export EC2_STATE_CHANGE_RULE_ARN=`aws events put-rule --name ec2StartedRunning \
+        --event-pattern '{"source":["aws.ec2"],"detail-type":["EC2 Instance State-change Notification"],"detail":{"state":["running"]}}' \
+        --role-arn $HOST_MAINTENANCE_ROLE_ARN --query RuleArn --output text`
+
+    aws events put-targets --rule ec2StartedRunning \
+        --targets "Id=ec2StartedLambdaFunc,Arn=$REGISTER_INSTANCE_ARN"
+
+    aws ec2 run-instances --instance-type t2.small \
+        --subnet-id $SUBNET_ID_PUBLIC --image-id ami-892d0db9
 
 When these come online, they will issue a request to the above Lambda function (updateHostRegistry), registering themselves within the "hosts" table running on the appDatabase server. Once registered there, they will be usable to the appServer instances which will be created next.
 
