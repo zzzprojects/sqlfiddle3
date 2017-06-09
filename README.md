@@ -185,25 +185,23 @@ Create Lambda functions which will register your host database servers and keep 
         --environment Variables="{CLUSTERNAME=sqlfiddle3}" \
         --zip-file fileb://appServer/target/sqlfiddle-lambda.zip
 
-    export REGISTER_INSTANCE_ARN=`aws lambda create-function \
+    aws lambda create-function \
         --function-name registerInstance \
         --runtime nodejs6.10 --role $HOST_MAINTENANCE_ROLE_ARN \
         --handler manageEC2.registerInstance --timeout 10 \
-        --environment Variables="{SQLSERVER2014_AMI=ami-892d0db9,ORACLE11G_AMI=ami-892d0db9-b,VPC_ID=${VPC_ID}}" \
-        --zip-file fileb://appServer/target/sqlfiddle-lambda.zip \
-        --query FunctionArn --output text`
+        --environment Variables="{SQLSERVER2014_AMI=$SQLSERVER2014_AMI,ORACLE11G_AMI=$ORACLE11G_AMI,VPC_ID=${VPC_ID}}" \
+        --zip-file fileb://appServer/target/sqlfiddle-lambda.zip
 
     aws lambda create-function --function-name runInstanceType \
         --runtime nodejs6.10 --role $HOST_MAINTENANCE_ROLE_ARN \
         --handler manageEC2.runInstanceType --timeout 10 \
-        --environment Variables="{SQLSERVER2014_AMI=ami-892d0db9,ORACLE11G_AMI=ami-892d0db9,SUBNET_ID=${SUBNET_ID_PUBLIC}}" \
+        --environment Variables="{SQLSERVER2014_AMI=$SQLSERVER2014_AMI,ORACLE11G_AMI=$ORACLE11G_AMI,SUBNET_ID=${SUBNET_ID_PUBLIC}}" \
         --zip-file fileb://appServer/target/sqlfiddle-lambda.zip
 
     aws lambda create-function --function-name terminateInstance \
         --runtime nodejs6.10 --role $HOST_MAINTENANCE_ROLE_ARN \
         --handler manageEC2.terminateInstance --timeout 10 \
         --zip-file fileb://appServer/target/sqlfiddle-lambda.zip
-
 
     export OVERUSED_HOSTS_ARN=`aws lambda create-function \
         --function-name checkForOverusedHosts \
@@ -311,17 +309,19 @@ Bring the database services up:
 
 Bring any commercial database servers that are running on EC2 hosts (not docker containers):
 
-    export EC2_STATE_CHANGE_RULE_ARN=`aws events put-rule --name ec2StartedRunning \
-        --event-pattern '{"source":["aws.ec2"],"detail-type":["EC2 Instance State-change Notification"],"detail":{"state":["running"]}}' \
-        --role-arn $HOST_MAINTENANCE_ROLE_ARN --query RuleArn --output text`
-
-    aws events put-targets --rule ec2StartedRunning \
-        --targets "Id=ec2StartedLambdaFunc,Arn=$REGISTER_INSTANCE_ARN"
+    aws ec2 run-instances --instance-type t2.small \
+        --subnet-id $SUBNET_ID_PUBLIC --image-id $SQLSERVER2014_AMI
 
     aws ec2 run-instances --instance-type t2.small \
-        --subnet-id $SUBNET_ID_PUBLIC --image-id ami-892d0db9
+        --subnet-id $SUBNET_ID_PUBLIC --image-id $ORACLE11G_AMI
 
-When these come online, they will issue a request to the above Lambda function (updateHostRegistry), registering themselves within the "hosts" table running on the appDatabase server. Once registered there, they will be usable to the appServer instances which will be created next.
+These AMIs need to be configured to call the registerInstance Lambda function when their database server is started. The best way to do that is to install the AWS command line tools (or PowerShell tools) and configure them with your account information. When the services start, schedule a task that will execute this lambda function. For example, in Windows PowerShell you could run a script like this:
+
+    Invoke-LMFunction -FunctionName registerInstance -Payload '{ "type": "sqlserver2014" }'
+
+And have that script get triggered when MSSQLSERVER produces an event like "SQL Server is now ready for client connections. This is an informational message; no user action is required." See aws/registerSQLServer_on_startup.xml for full details on setting up this task in windows.
+
+The various invocations of Lambda functions (either from EC2 or ECS) will result in the registration of each server within the "hosts" table running on the appDatabase server. Once registered there, they will be usable to the appServer instances which will be created next.
 
 Schedule CloudWatch Events to monitor the tasks using the above Lambda functions, refreshing them as needed:
 

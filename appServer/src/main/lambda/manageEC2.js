@@ -1,34 +1,32 @@
 var Q = require('q');
 
-var typeDetails = [
-    {
+var typeDetails = {
+    "oracle11g": {
         "ImageId": process.env.ORACLE11G_AMI,
-        "port": 1521,
-        "type": "oracle11g"
+        "port": 1521
     },
-    {
+    "sqlserver2014": {
         "ImageId": process.env.SQLSERVER2014_AMI,
-        "port": 1433,
-        "type": "sqlserver2014"
+        "port": 1433
     }
-]
+}
 
 exports.runInstanceType = (event, context, callback) => {
     var AWS = require('aws-sdk'),
         ec2 = new AWS.EC2({"apiVersion": '2016-11-15'}),
-        typeDetail = typeDetails.filter((td) => td.type === event.type)[0];
+        typeDetail = typeDetails[event.type];
 
-    if (typeDetail) {
-        ec2.runInstances({
-            ImageId: typeDetail.ImageId,
-            MinCount: 1,
-            MaxCount: 1,
-            InstanceType: "t2.small",
-            SubnetId: process.env.SUBNET_ID
-        }, callback);
-    } else {
-        callback(`Unable to find detail for type ${event.type}`);
+    if (!typeDetail) {
+        return callback(`Unrecogized type: ${event.type}`);
     }
+
+    ec2.runInstances({
+        ImageId: typeDetail.ImageId,
+        MinCount: 1,
+        MaxCount: 1,
+        InstanceType: "t2.small",
+        SubnetId: process.env.SUBNET_ID
+    }, callback);
 };
 
 exports.terminateInstance = (event, context, callback) => {
@@ -69,47 +67,37 @@ var findInstancesOfImage = (imageId) => {
     });
 };
 
+/*
+event contains:
+{ "type": "sqlserver2014" }
+*/
 exports.registerInstance = (event, context, callback) => {
     var AWS = require('aws-sdk'),
-        lambda = new AWS.Lambda({"apiVersion": '2015-03-31'});
+        lambda = new AWS.Lambda({"apiVersion": '2015-03-31'}),
+        typeDetail = typeDetails[event.type];
 
-    return getInstances({
-        InstanceIds: [event.detail["instance-id"]]
-    })
-    .then((instances) => {
-        if (!instances || instances.length !== 1) {
-            throw `Unable to find the one instance passed to this function: ${event.detail["instance-id"]}`;
-        }
+    if (!typeDetail) {
+        return callback(`Unrecogized type: ${event.type}`);
+    }
 
-        let ImageId = instances[0].ImageId;
-        let typeDetail = typeDetails.filter((td) => td.ImageId === ImageId)[0];
-
-        if (!typeDetail) {
-            throw `Unrecogized ImageId: ${ImageId}`;
-        }
-
-        return typeDetail;
-    })
-    .then((typeDetail) =>
-        findInstancesOfImage(typeDetail.ImageId)
-        .then((instances) =>
-            lambda.invoke({
-                FunctionName: "syncHosts",
-                Payload: JSON.stringify({
-                    hostConnections: instances.map((instance) =>
-                        ({
-                            connection_meta: JSON.stringify({
-                                type: "ec2",
-                                InstanceId: instance.InstanceId
-                            }),
-                            port: typeDetail.port,
-                            ip: instance.PrivateIpAddress
-                        })
-                    ),
-                    hostType: typeDetail.type
-                })
-            }).promise()
-        )
+    return findInstancesOfImage(typeDetail.ImageId)
+    .then((instances) =>
+        lambda.invoke({
+            FunctionName: "syncHosts",
+            Payload: JSON.stringify({
+                hostConnections: instances.map((instance) =>
+                    ({
+                        connection_meta: JSON.stringify({
+                            type: "ec2",
+                            InstanceId: instance.InstanceId
+                        }),
+                        port: typeDetail.port,
+                        ip: instance.PrivateIpAddress
+                    })
+                ),
+                hostType: typeDetail.type
+            })
+        }).promise()
     )
     .then((response) => callback(null, response))
     .catch((err) => callback(err));
