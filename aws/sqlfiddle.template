@@ -179,7 +179,10 @@
                     "Ref": "PRIVATESUB"
                 },
                 "AllocationId": {
-                    "Fn::GetAtt" : ["NATIP", "AllocationId"]
+                    "Fn::GetAtt": [
+                        "NATIP",
+                        "AllocationId"
+                    ]
                 }
             },
             "Metadata": {
@@ -237,15 +240,103 @@
                     },
                     {
                         "CidrIp": "10.1.0.0/16",
-                        "IpProtocol" : "tcp",
-                        "FromPort" : 0,
-                        "ToPort" : 65535
+                        "IpProtocol": "tcp",
+                        "FromPort": 0,
+                        "ToPort": 65535
                     }
                 ]
             },
             "Metadata": {
                 "AWS::CloudFormation::Designer": {
                     "id": "94e6710d-f321-4d91-9cd5-2b6483fe9b3a"
+                }
+            }
+        },
+        "HOSTMAINTENANCEPROFILE": {
+            "Type": "AWS::IAM::InstanceProfile",
+            "Properties": {
+                "Roles": [
+                    {
+                        "Ref": "HOSTMAINTENANCEROLE"
+                    }
+                ]
+            },
+            "Metadata": {
+                "AWS::CloudFormation::Designer": {
+                    "id": "74add6d1-eff5-4411-8d37-7cc66f954bd1"
+                }
+            }
+        },
+        "HOSTMAINTENANCEROLE": {
+            "Type": "AWS::IAM::Role",
+            "Properties": {
+                "AssumeRolePolicyDocument": {
+                    "Version": "2012-10-17",
+                    "Statement": [
+                        {
+                            "Effect": "Allow",
+                            "Principal": {
+                                "Service": "lambda.amazonaws.com"
+                            },
+                            "Action": "sts:AssumeRole"
+                        },
+                        {
+                            "Sid": "",
+                            "Effect": "Allow",
+                            "Principal": {
+                                "Service": "apigateway.amazonaws.com"
+                            },
+                            "Action": "sts:AssumeRole"
+                        },
+                        {
+                            "Sid": "",
+                            "Effect": "Allow",
+                            "Principal": {
+                                "Service": "events.amazonaws.com"
+                            },
+                            "Action": "sts:AssumeRole"
+                        }
+                    ]
+                }
+            },
+            "Metadata": {
+                "AWS::CloudFormation::Designer": {
+                    "id": "0250e9ef-924e-4fa9-9dc6-6e1c9708c558"
+                }
+            }
+        },
+        "HOSTMAINTENANCEPOLICY": {
+            "Type": "AWS::IAM::Policy",
+            "Properties": {
+                "Roles": [
+                    {
+                        "Ref": "HOSTMAINTENANCEROLE"
+                    }
+                ],
+                "PolicyDocument": {
+                    "Version": "2012-10-17",
+                    "Statement": [
+                        {
+                            "Effect": "Allow",
+                            "Action": [
+                                "ecs:*",
+                                "vpc:*",
+                                "ec2:*",
+                                "lambda:InvokeFunction",
+                                "logs:*",
+                                "apigateway:*"
+                            ],
+                            "Resource": [
+                                "*"
+                            ]
+                        }
+                    ]
+                },
+                "PolicyName": "hostMaintenance"
+            },
+            "Metadata": {
+                "AWS::CloudFormation::Designer": {
+                    "id": "6ecf9776-6b45-4fca-afda-cd9381a061e8"
                 }
             }
         }
@@ -484,6 +575,66 @@
                 "isrelatedto": [
                     "6b34d31d-cdb3-4c13-aac1-243e2bfda003"
                 ]
+            },
+            "74add6d1-eff5-4411-8d37-7cc66f954bd1": {
+                "size": {
+                    "width": 60,
+                    "height": 60
+                },
+                "position": {
+                    "x": 1870,
+                    "y": 1000
+                },
+                "z": 0,
+                "embeds": [],
+                "isassociatedwith": [
+                    "0250e9ef-924e-4fa9-9dc6-6e1c9708c558"
+                ]
+            },
+            "0250e9ef-924e-4fa9-9dc6-6e1c9708c558": {
+                "size": {
+                    "width": 60,
+                    "height": 60
+                },
+                "position": {
+                    "x": 2030,
+                    "y": 1000
+                },
+                "z": 0,
+                "embeds": []
+            },
+            "841e6f9e-6f0b-4e25-b83c-adf1dae87139": {
+                "source": {
+                    "id": "74add6d1-eff5-4411-8d37-7cc66f954bd1"
+                },
+                "target": {
+                    "id": "0250e9ef-924e-4fa9-9dc6-6e1c9708c558"
+                },
+                "z": 4
+            },
+            "6ecf9776-6b45-4fca-afda-cd9381a061e8": {
+                "size": {
+                    "width": 60,
+                    "height": 60
+                },
+                "position": {
+                    "x": 2190,
+                    "y": 1000
+                },
+                "z": 0,
+                "embeds": [],
+                "isassociatedwith": [
+                    "0250e9ef-924e-4fa9-9dc6-6e1c9708c558"
+                ]
+            },
+            "b1312895-aafd-4dc1-b2cb-2aef5036a83a": {
+                "source": {
+                    "id": "6ecf9776-6b45-4fca-afda-cd9381a061e8"
+                },
+                "target": {
+                    "id": "0250e9ef-924e-4fa9-9dc6-6e1c9708c558"
+                },
+                "z": 11
             }
         }
     }
