@@ -339,14 +339,274 @@
                     "id": "6ecf9776-6b45-4fca-afda-cd9381a061e8"
                 }
             }
+        },
+        "ADDTASK": {
+            "Type": "AWS::Lambda::Function",
+            "Properties": {
+                "Code": {
+                    "S3Bucket": "sqlfiddle3",
+                    "S3Key": "sqlfiddle-lambda.zip"
+                },
+                "Environment": {
+                    "Variables": {
+                        "CLUSTERNAME": "sqlfiddle3"
+                    }
+                },
+                "FunctionName": "addTask",
+                "Handler": "manageECS.addTask",
+                "Runtime": "nodejs6.10",
+                "Timeout": 10,
+                "Role": {
+                    "Fn::GetAtt": [
+                        "HOSTMAINTENANCEROLE",
+                        "Arn"
+                    ]
+                }
+            },
+            "Metadata": {
+                "AWS::CloudFormation::Designer": {
+                    "id": "24541f04-0de6-4e60-84f2-9fd2d4fad086"
+                }
+            }
+        },
+        "DELETETASK": {
+            "Type": "AWS::Lambda::Function",
+            "Properties": {
+                "Code": {
+                    "S3Bucket": "sqlfiddle3",
+                    "S3Key": "sqlfiddle-lambda.zip"
+                },
+                "Environment": {
+                    "Variables": {
+                        "CLUSTERNAME": "sqlfiddle3"
+                    }
+                },
+                "FunctionName": "deleteTask",
+                "Handler": "manageECS.deleteTask",
+                "Runtime": "nodejs6.10",
+                "Timeout": 10,
+                "Role": {
+                    "Fn::GetAtt": [
+                        "HOSTMAINTENANCEROLE",
+                        "Arn"
+                    ]
+                }
+            },
+            "Metadata": {
+                "AWS::CloudFormation::Designer": {
+                    "id": "c36958c6-627e-4859-999d-fab175152545"
+                }
+            }
+        },
+        "REGISTERINSTANCE": {
+            "Type": "AWS::Lambda::Function",
+            "Properties": {
+                "Code": {
+                    "S3Bucket": "sqlfiddle3",
+                    "S3Key": "sqlfiddle-lambda.zip"
+                },
+                "Environment": {
+                    "Variables": {
+                        "SQLSERVER2014_AMI": "",
+                        "ORACLE11G_AMI": "",
+                        "VPC_ID": ""
+                    }
+                },
+                "FunctionName": "registerInstance",
+                "Handler": "manageEC2.registerInstance",
+                "Runtime": "nodejs6.10",
+                "Timeout": 10,
+                "Role": {
+                    "Fn::GetAtt": [
+                        "HOSTMAINTENANCEROLE",
+                        "Arn"
+                    ]
+                }
+            },
+            "Metadata": {
+                "AWS::CloudFormation::Designer": {
+                    "id": "bae35a3b-5c39-40f4-adc4-52159e1e4a01"
+                }
+            }
+        },
+        "RUNINSTANCETYPE": {
+            "Type": "AWS::Lambda::Function",
+            "Properties": {
+                "Code": {
+                    "S3Bucket": "sqlfiddle3",
+                    "S3Key": "sqlfiddle-lambda.zip"
+                },
+                "Environment": {
+                    "Variables": {
+                        "SQLSERVER2014_AMI": "",
+                        "ORACLE11G_AMI": "",
+                        "SUBNET_ID": ""
+                    }
+                },
+                "FunctionName": "runInstanceType",
+                "Handler": "manageEC2.runInstanceType",
+                "Runtime": "nodejs6.10",
+                "Timeout": 10,
+                "Role": {
+                    "Fn::GetAtt": [
+                        "HOSTMAINTENANCEROLE",
+                        "Arn"
+                    ]
+                }
+            },
+            "Metadata": {
+                "AWS::CloudFormation::Designer": {
+                    "id": "88cdb303-eaa7-41c1-926c-fdbcc14e924b"
+                }
+            }
+        },
+        "TERMINATEINSTANCE": {
+            "Type": "AWS::Lambda::Function",
+            "Properties": {
+                "Code": {
+                    "S3Bucket": "sqlfiddle3",
+                    "S3Key": "sqlfiddle-lambda.zip"
+                },
+                "FunctionName": "terminateInstance",
+                "Handler": "manageEC2.terminateInstance",
+                "Runtime": "nodejs6.10",
+                "Timeout": 10,
+                "Role": {
+                    "Fn::GetAtt": [
+                        "HOSTMAINTENANCEROLE",
+                        "Arn"
+                    ]
+                }
+            },
+            "Metadata": {
+                "AWS::CloudFormation::Designer": {
+                    "id": "320716f5-e905-4dc4-bdf2-75c0d54916ca"
+                }
+            }
+        },
+        "CHECKFOROVERUSEDHOSTS": {
+            "Type": "AWS::Lambda::Function",
+            "Properties": {
+                "Code": {
+                    "S3Bucket": "sqlfiddle3",
+                    "S3Key": "sqlfiddle-lambda.zip"
+                },
+                "Environment": {
+                    "Variables": {
+                        "postgresHost": "",
+                        "postgresUser": "postgres",
+                        "postgresPassword": "password",
+                        "MAX_SCHEMAS_PER_HOST": "100"
+                    }
+                },
+                "FunctionName": "checkForOverusedHosts",
+                "Handler": "hostMaintenance.checkForOverusedHosts",
+                "Runtime": "nodejs6.10",
+                "Timeout": 10,
+                "Role": {
+                    "Fn::GetAtt": [
+                        "HOSTMAINTENANCEROLE",
+                        "Arn"
+                    ]
+                },
+                "VpcConfig": {
+                    "SecurityGroupIds": [
+                        {
+                            "Ref": "SECGROUP"
+                        }
+                    ],
+                    "SubnetIds": [
+                        {
+                            "Ref": "PRIVATESUB"
+                        }
+                    ]
+                }
+            },
+            "Metadata": {
+                "AWS::CloudFormation::Designer": {
+                    "id": "52335cdf-85a8-4dd3-a67d-7ae1e5a0bfaa"
+                }
+            }
+        },
+        "SYNCHOSTS": {
+            "Type": "AWS::Lambda::Function",
+            "Properties": {
+                "Code": {
+                    "S3Bucket": "sqlfiddle3",
+                    "S3Key": "sqlfiddle-lambda.zip"
+                },
+                "Environment": {
+                    "Variables": {
+                        "postgresHost": "",
+                        "postgresUser": "postgres",
+                        "postgresPassword": "password"
+                    }
+                },
+                "FunctionName": "syncHosts",
+                "Handler": "hostMaintenance.syncHosts",
+                "Runtime": "nodejs6.10",
+                "Timeout": 10,
+                "Role": {
+                    "Fn::GetAtt": [
+                        "HOSTMAINTENANCEROLE",
+                        "Arn"
+                    ]
+                },
+                "VpcConfig": {
+                    "SecurityGroupIds": [
+                        {
+                            "Ref": "SECGROUP"
+                        }
+                    ],
+                    "SubnetIds": [
+                        {
+                            "Ref": "PRIVATESUB"
+                        }
+                    ]
+                }
+            },
+            "Metadata": {
+                "AWS::CloudFormation::Designer": {
+                    "id": "ca662395-2c32-4de3-99ec-b00c585586d4"
+                }
+            }
+        },
+        "UPDATEHOSTREGISTRY": {
+            "Type": "AWS::Lambda::Function",
+            "Properties": {
+                "Code": {
+                    "S3Bucket": "sqlfiddle3",
+                    "S3Key": "sqlfiddle-lambda.zip"
+                },
+                "Environment": {
+                    "Variables": {
+                        "CLUSTERNAME": "sqlfiddle3"
+                    }
+                },
+                "FunctionName": "updateHostRegistry",
+                "Handler": "manageECS.updateHostRegistry",
+                "Runtime": "nodejs6.10",
+                "Timeout": 10,
+                "Role": {
+                    "Fn::GetAtt": [
+                        "HOSTMAINTENANCEROLE",
+                        "Arn"
+                    ]
+                }
+            },
+            "Metadata": {
+                "AWS::CloudFormation::Designer": {
+                    "id": "94565b7d-1b81-4ebf-a48b-8f33008c971b"
+                }
+            }
         }
     },
     "Metadata": {
         "AWS::CloudFormation::Designer": {
             "46544b0b-c9cb-45c8-a60e-35b68f673b43": {
                 "size": {
-                    "width": 520,
-                    "height": 670
+                    "width": 610,
+                    "height": 660
                 },
                 "position": {
                     "x": 1220,
@@ -405,8 +665,8 @@
             },
             "846cac16-c276-48c6-93ef-deec64df4ae3": {
                 "size": {
-                    "width": 160,
-                    "height": 170
+                    "width": 350,
+                    "height": 160
                 },
                 "position": {
                     "x": 1330,
@@ -468,7 +728,7 @@
                     "height": 60
                 },
                 "position": {
-                    "x": 960,
+                    "x": 1100,
                     "y": 1170
                 },
                 "z": 1,
@@ -554,8 +814,8 @@
                     "height": 60
                 },
                 "position": {
-                    "x": 1040,
-                    "y": 1490
+                    "x": 1110,
+                    "y": 1480
                 },
                 "z": 0,
                 "embeds": []
@@ -582,8 +842,8 @@
                     "height": 60
                 },
                 "position": {
-                    "x": 1870,
-                    "y": 1000
+                    "x": 2190,
+                    "y": 880
                 },
                 "z": 0,
                 "embeds": [],
@@ -597,8 +857,8 @@
                     "height": 60
                 },
                 "position": {
-                    "x": 2030,
-                    "y": 1000
+                    "x": 2040,
+                    "y": 1010
                 },
                 "z": 0,
                 "embeds": []
@@ -619,7 +879,7 @@
                 },
                 "position": {
                     "x": 2190,
-                    "y": 1000
+                    "y": 960
                 },
                 "z": 0,
                 "embeds": [],
@@ -635,6 +895,126 @@
                     "id": "0250e9ef-924e-4fa9-9dc6-6e1c9708c558"
                 },
                 "z": 11
+            },
+            "24541f04-0de6-4e60-84f2-9fd2d4fad086": {
+                "size": {
+                    "width": 60,
+                    "height": 60
+                },
+                "position": {
+                    "x": 1869.2863649994156,
+                    "y": 1159.2337360420024
+                },
+                "z": 0,
+                "embeds": [],
+                "isrelatedto": [
+                    "0250e9ef-924e-4fa9-9dc6-6e1c9708c558"
+                ]
+            },
+            "c36958c6-627e-4859-999d-fab175152545": {
+                "size": {
+                    "width": 60,
+                    "height": 60
+                },
+                "position": {
+                    "x": 1940,
+                    "y": 1160
+                },
+                "z": 0,
+                "embeds": [],
+                "isrelatedto": [
+                    "0250e9ef-924e-4fa9-9dc6-6e1c9708c558"
+                ]
+            },
+            "bae35a3b-5c39-40f4-adc4-52159e1e4a01": {
+                "size": {
+                    "width": 60,
+                    "height": 60
+                },
+                "position": {
+                    "x": 2040,
+                    "y": 1160
+                },
+                "z": 0,
+                "embeds": [],
+                "isrelatedto": [
+                    "0250e9ef-924e-4fa9-9dc6-6e1c9708c558"
+                ]
+            },
+            "88cdb303-eaa7-41c1-926c-fdbcc14e924b": {
+                "size": {
+                    "width": 60,
+                    "height": 60
+                },
+                "position": {
+                    "x": 2120,
+                    "y": 1160
+                },
+                "z": 0,
+                "embeds": [],
+                "isrelatedto": [
+                    "0250e9ef-924e-4fa9-9dc6-6e1c9708c558"
+                ]
+            },
+            "320716f5-e905-4dc4-bdf2-75c0d54916ca": {
+                "size": {
+                    "width": 60,
+                    "height": 60
+                },
+                "position": {
+                    "x": 2200,
+                    "y": 1160
+                },
+                "z": 0,
+                "embeds": [],
+                "isrelatedto": [
+                    "0250e9ef-924e-4fa9-9dc6-6e1c9708c558"
+                ]
+            },
+            "52335cdf-85a8-4dd3-a67d-7ae1e5a0bfaa": {
+                "size": {
+                    "width": 60,
+                    "height": 60
+                },
+                "position": {
+                    "x": 1870,
+                    "y": 1270
+                },
+                "z": 0,
+                "embeds": [],
+                "isrelatedto": [
+                    "0250e9ef-924e-4fa9-9dc6-6e1c9708c558",
+                    "94e6710d-f321-4d91-9cd5-2b6483fe9b3a",
+                    "846cac16-c276-48c6-93ef-deec64df4ae3"
+                ]
+            },
+            "ca662395-2c32-4de3-99ec-b00c585586d4": {
+                "size": {
+                    "width": 60,
+                    "height": 60
+                },
+                "position": {
+                    "x": 1940,
+                    "y": 1270
+                },
+                "z": 0,
+                "embeds": [],
+                "isrelatedto": [
+                    "0250e9ef-924e-4fa9-9dc6-6e1c9708c558",
+                    "94e6710d-f321-4d91-9cd5-2b6483fe9b3a",
+                    "846cac16-c276-48c6-93ef-deec64df4ae3"
+                ]
+            },
+            "94565b7d-1b81-4ebf-a48b-8f33008c971b": {
+                "size": {
+                    "width": 60,
+                    "height": 60
+                },
+                "position": {
+                    "x": 2280,
+                    "y": 1160
+                },
+                "z": 0
             }
         }
     }
