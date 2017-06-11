@@ -1,5 +1,19 @@
 {
     "AWSTemplateFormatVersion": "2010-09-09",
+    "Parameters": {
+        "APPDATABASEIP": {
+            "Description": "IP Address for central app database",
+            "Type": "String"
+        },
+        "SQLSERVER2014AMI": {
+            "Description": "ami for sqlserver2014 ec2 host",
+            "Type": "String"
+        },
+        "ORACLE11GAMI": {
+            "Description": "ami for oracle11g ec2 host",
+            "Type": "String"
+        }
+    },
     "Resources": {
         "SQLFIDDLE": {
             "Type": "AWS::EC2::VPC",
@@ -66,6 +80,17 @@
                 "VpcId": {
                     "Ref": "SQLFIDDLE"
                 },
+                "AvailabilityZone": {
+                    "Fn::Join": [
+                        "",
+                        [
+                            {
+                                "Ref": "AWS::Region"
+                            },
+                            "a"
+                        ]
+                    ]
+                },
                 "CidrBlock": "10.1.0.0/24"
             },
             "Metadata": {
@@ -95,6 +120,17 @@
             "Properties": {
                 "VpcId": {
                     "Ref": "SQLFIDDLE"
+                },
+                "AvailabilityZone": {
+                    "Fn::Join": [
+                        "",
+                        [
+                            {
+                                "Ref": "AWS::Region"
+                            },
+                            "b"
+                        ]
+                    ]
                 },
                 "CidrBlock": "10.1.1.0/24"
             },
@@ -126,6 +162,17 @@
             "Properties": {
                 "VpcId": {
                     "Ref": "SQLFIDDLE"
+                },
+                "AvailabilityZone": {
+                    "Fn::Join": [
+                        "",
+                        [
+                            {
+                                "Ref": "AWS::Region"
+                            },
+                            "c"
+                        ]
+                    ]
                 },
                 "CidrBlock": "10.1.2.0/24"
             },
@@ -407,9 +454,15 @@
                 },
                 "Environment": {
                     "Variables": {
-                        "SQLSERVER2014_AMI": "",
-                        "ORACLE11G_AMI": "",
-                        "VPC_ID": ""
+                        "SQLSERVER2014_AMI": {
+                            "Ref": "SQLSERVER2014AMI"
+                        },
+                        "ORACLE11G_AMI": {
+                            "Ref": "ORACLE11GAMI"
+                        },
+                        "VPC_ID": {
+                            "Ref": "SQLFIDDLE"
+                        }
                     }
                 },
                 "FunctionName": "registerInstance",
@@ -438,9 +491,15 @@
                 },
                 "Environment": {
                     "Variables": {
-                        "SQLSERVER2014_AMI": "",
-                        "ORACLE11G_AMI": "",
-                        "SUBNET_ID": ""
+                        "SQLSERVER2014_AMI": {
+                            "Ref": "SQLSERVER2014AMI"
+                        },
+                        "ORACLE11G_AMI": {
+                            "Ref": "ORACLE11GAMI"
+                        },
+                        "SUBNET_ID": {
+                            "Ref": "PUBLICPRIMARY"
+                        }
                     }
                 },
                 "FunctionName": "runInstanceType",
@@ -493,7 +552,9 @@
                 },
                 "Environment": {
                     "Variables": {
-                        "postgresHost": "",
+                        "postgresHost": {
+                            "Ref": "APPDATABASEIP"
+                        },
                         "postgresUser": "postgres",
                         "postgresPassword": "password",
                         "MAX_SCHEMAS_PER_HOST": "100"
@@ -537,7 +598,9 @@
                 },
                 "Environment": {
                     "Variables": {
-                        "postgresHost": "",
+                        "postgresHost": {
+                            "Ref": "APPDATABASEIP"
+                        },
                         "postgresUser": "postgres",
                         "postgresPassword": "password"
                     }
@@ -599,6 +662,98 @@
                     "id": "94565b7d-1b81-4ebf-a48b-8f33008c971b"
                 }
             }
+        },
+        "CHECKFOROVERUSEDHOSTSEVENT": {
+            "Type": "AWS::Events::Rule",
+            "Properties": {
+                "Name": "checkForOverusedHosts",
+                "ScheduleExpression": "rate(5 minutes)",
+                "RoleArn": {
+                    "Fn::GetAtt": [
+                        "HOSTMAINTENANCEROLE",
+                        "Arn"
+                    ]
+                },
+                "Targets": [
+                    {
+                        "Arn": {
+                            "Fn::GetAtt" : [
+                                "CHECKFOROVERUSEDHOSTS",
+                                "Arn"
+                            ]
+                        },
+                        "Id": "LambdaFunc"
+                    }
+                ]
+            },
+            "Metadata": {
+                "AWS::CloudFormation::Designer": {
+                    "id": "96a3f05c-1b47-4bca-b70f-b7012f14e164"
+                }
+            }
+        },
+        "ELB": {
+            "Type": "AWS::ElasticLoadBalancingV2::LoadBalancer",
+            "Properties": {
+                "Name": "sqlfiddle3ELB",
+                "Subnets": [
+                    {
+                        "Ref": "PUBLICPRIMARY"
+                    },
+                    {
+                        "Ref": "PUBLICADDITIONAL"
+                    }
+                ],
+                "SecurityGroups": [
+                    {
+                        "Ref": "SECGROUP"
+                    }
+                ]
+            },
+            "Metadata": {
+                "AWS::CloudFormation::Designer": {
+                    "id": "cc95ae8e-4c0d-477a-818a-57b5dcdbdf8a"
+                }
+            }
+        },
+        "TARGETGROUP": {
+            "Type": "AWS::ElasticLoadBalancingV2::TargetGroup",
+            "Properties": {
+                "Name": "appServerGroup",
+                "Port": 80,
+                "Protocol": "HTTP",
+                "VpcId": {
+                    "Ref": "SQLFIDDLE"
+                }
+            },
+            "Metadata": {
+                "AWS::CloudFormation::Designer": {
+                    "id": "66789e8a-0429-4aac-aaef-38d967fa0e7b"
+                }
+            }
+        },
+        "LISTENER": {
+            "Type": "AWS::ElasticLoadBalancingV2::Listener",
+            "Properties": {
+                "Port": 80,
+                "Protocol": "HTTP",
+                "DefaultActions": [
+                    {
+                        "TargetGroupArn": {
+                            "Ref": "TARGETGROUP"
+                        },
+                        "Type": "forward"
+                    }
+                ],
+                "LoadBalancerArn": {
+                    "Ref": "ELB"
+                }
+            },
+            "Metadata": {
+                "AWS::CloudFormation::Designer": {
+                    "id": "a2159522-c157-4d3f-92dc-477d42a64fce"
+                }
+            }
         }
     },
     "Metadata": {
@@ -609,17 +764,20 @@
                     "height": 660
                 },
                 "position": {
-                    "x": 1220,
-                    "y": 990
+                    "x": 1210,
+                    "y": 980
                 },
                 "z": 1,
                 "embeds": [
+                    "66789e8a-0429-4aac-aaef-38d967fa0e7b",
                     "94e6710d-f321-4d91-9cd5-2b6483fe9b3a",
                     "1c7f55e5-4bd0-40f7-87b9-2b6e7eeff209",
                     "71355ab6-0828-4832-92e3-009e9dc29b0a",
                     "846cac16-c276-48c6-93ef-deec64df4ae3",
                     "3f3fc941-0501-4b01-b0f2-3e3220c820da",
-                    "3863545d-5aaf-435c-951f-d38805f38ce0"
+                    "3863545d-5aaf-435c-951f-d38805f38ce0",
+                    "cc95ae8e-4c0d-477a-818a-57b5dcdbdf8a",
+                    "a2159522-c157-4d3f-92dc-477d42a64fce"
                 ]
             },
             "3b12ee16-c123-44f3-9f6a-2a69c86c7517": {
@@ -641,8 +799,8 @@
                     "height": 60
                 },
                 "position": {
-                    "x": 1590,
-                    "y": 1310
+                    "x": 1510,
+                    "y": 1300
                 },
                 "z": 2,
                 "parent": "46544b0b-c9cb-45c8-a60e-35b68f673b43",
@@ -654,8 +812,8 @@
                     "height": 150
                 },
                 "position": {
-                    "x": 1330,
-                    "y": 1240
+                    "x": 1320,
+                    "y": 1230
                 },
                 "z": 2,
                 "parent": "46544b0b-c9cb-45c8-a60e-35b68f673b43",
@@ -665,16 +823,18 @@
             },
             "846cac16-c276-48c6-93ef-deec64df4ae3": {
                 "size": {
-                    "width": 350,
-                    "height": 160
+                    "width": 280,
+                    "height": 170
                 },
                 "position": {
-                    "x": 1330,
-                    "y": 1450
+                    "x": 1320,
+                    "y": 1440
                 },
                 "z": 2,
                 "parent": "46544b0b-c9cb-45c8-a60e-35b68f673b43",
                 "embeds": [
+                    "ca662395-2c32-4de3-99ec-b00c585586d4",
+                    "52335cdf-85a8-4dd3-a67d-7ae1e5a0bfaa",
                     "6b34d31d-cdb3-4c13-aac1-243e2bfda003"
                 ]
             },
@@ -684,8 +844,8 @@
                     "height": 60
                 },
                 "position": {
-                    "x": 1350,
-                    "y": 1490
+                    "x": 1340,
+                    "y": 1470
                 },
                 "z": 3,
                 "parent": "846cac16-c276-48c6-93ef-deec64df4ae3",
@@ -700,8 +860,8 @@
                     "height": 150
                 },
                 "position": {
-                    "x": 1330,
-                    "y": 1040
+                    "x": 1320,
+                    "y": 1030
                 },
                 "z": 2,
                 "parent": "46544b0b-c9cb-45c8-a60e-35b68f673b43",
@@ -715,8 +875,8 @@
                     "height": 90
                 },
                 "position": {
-                    "x": 1530,
-                    "y": 1030
+                    "x": 1520,
+                    "y": 1020
                 },
                 "z": 2,
                 "parent": "46544b0b-c9cb-45c8-a60e-35b68f673b43",
@@ -767,8 +927,8 @@
                     "height": 90
                 },
                 "position": {
-                    "x": 1530,
-                    "y": 1150
+                    "x": 1520,
+                    "y": 1140
                 },
                 "z": 2,
                 "parent": "46544b0b-c9cb-45c8-a60e-35b68f673b43",
@@ -789,8 +949,8 @@
                     "height": 60
                 },
                 "position": {
-                    "x": 1370,
-                    "y": 1070
+                    "x": 1360,
+                    "y": 1060
                 },
                 "z": 3,
                 "parent": "1c7f55e5-4bd0-40f7-87b9-2b6e7eeff209",
@@ -826,8 +986,8 @@
                     "height": 60
                 },
                 "position": {
-                    "x": 1350,
-                    "y": 1290
+                    "x": 1340,
+                    "y": 1280
                 },
                 "z": 3,
                 "parent": "71355ab6-0828-4832-92e3-009e9dc29b0a",
@@ -842,8 +1002,8 @@
                     "height": 60
                 },
                 "position": {
-                    "x": 2190,
-                    "y": 880
+                    "x": 1930,
+                    "y": 960
                 },
                 "z": 0,
                 "embeds": [],
@@ -932,13 +1092,14 @@
                     "height": 60
                 },
                 "position": {
-                    "x": 2040,
+                    "x": 2280,
                     "y": 1160
                 },
                 "z": 0,
                 "embeds": [],
                 "isrelatedto": [
-                    "0250e9ef-924e-4fa9-9dc6-6e1c9708c558"
+                    "0250e9ef-924e-4fa9-9dc6-6e1c9708c558",
+                    "46544b0b-c9cb-45c8-a60e-35b68f673b43"
                 ]
             },
             "88cdb303-eaa7-41c1-926c-fdbcc14e924b": {
@@ -953,7 +1114,8 @@
                 "z": 0,
                 "embeds": [],
                 "isrelatedto": [
-                    "0250e9ef-924e-4fa9-9dc6-6e1c9708c558"
+                    "0250e9ef-924e-4fa9-9dc6-6e1c9708c558",
+                    "3863545d-5aaf-435c-951f-d38805f38ce0"
                 ]
             },
             "320716f5-e905-4dc4-bdf2-75c0d54916ca": {
@@ -977,10 +1139,11 @@
                     "height": 60
                 },
                 "position": {
-                    "x": 1870,
-                    "y": 1270
+                    "x": 1510,
+                    "y": 1530
                 },
-                "z": 0,
+                "z": 3,
+                "parent": "846cac16-c276-48c6-93ef-deec64df4ae3",
                 "embeds": [],
                 "isrelatedto": [
                     "0250e9ef-924e-4fa9-9dc6-6e1c9708c558",
@@ -994,10 +1157,11 @@
                     "height": 60
                 },
                 "position": {
-                    "x": 1940,
-                    "y": 1270
+                    "x": 1510,
+                    "y": 1460
                 },
-                "z": 0,
+                "z": 3,
+                "parent": "846cac16-c276-48c6-93ef-deec64df4ae3",
                 "embeds": [],
                 "isrelatedto": [
                     "0250e9ef-924e-4fa9-9dc6-6e1c9708c558",
@@ -1011,10 +1175,187 @@
                     "height": 60
                 },
                 "position": {
-                    "x": 2280,
+                    "x": 2040,
                     "y": 1160
                 },
-                "z": 0
+                "z": 0,
+                "embeds": [],
+                "isrelatedto": [
+                    "0250e9ef-924e-4fa9-9dc6-6e1c9708c558"
+                ]
+            },
+            "267a91ab-55a0-40a3-9930-ee0e84ba2ce9": {
+                "source": {
+                    "id": "cbc6d3e1-2270-4b85-a222-20142687d745"
+                },
+                "target": {
+                    "id": "500c7158-9f47-4ea3-99d8-dfd3ae00d0db"
+                },
+                "z": 11
+            },
+            "afa202c1-f250-49d4-b95b-521c6e85a93d": {
+                "source": {
+                    "id": "60b6cb07-17e7-4db4-a0e2-4ac6317ba104"
+                },
+                "target": {
+                    "id": "94565b7d-1b81-4ebf-a48b-8f33008c971b"
+                },
+                "z": 11
+            },
+            "4b316b55-d426-4d76-a8d0-9f3a73ddc803": {
+                "source": {
+                    "id": "60b6cb07-17e7-4db4-a0e2-4ac6317ba104"
+                },
+                "target": {
+                    "id": "cbc6d3e1-2270-4b85-a222-20142687d745"
+                },
+                "z": 12
+            },
+            "2fc78aba-3508-4602-a433-23e7ce127d0b": {
+                "source": {
+                    "id": "cbc6d3e1-2270-4b85-a222-20142687d745"
+                },
+                "target": {
+                    "id": "520fe60e-aad1-4ab9-8155-9c773dbf5575"
+                },
+                "z": 11
+            },
+            "2f96e509-3050-4e80-89e7-06df7c049d47": {
+                "source": {
+                    "id": "520fe60e-aad1-4ab9-8155-9c773dbf5575"
+                },
+                "target": {
+                    "id": "94565b7d-1b81-4ebf-a48b-8f33008c971b"
+                },
+                "z": 12
+            },
+            "96a3f05c-1b47-4bca-b70f-b7012f14e164": {
+                "size": {
+                    "width": 60,
+                    "height": 60
+                },
+                "position": {
+                    "x": 1940,
+                    "y": 1530
+                },
+                "z": 0,
+                "embeds": [],
+                "dependson": [
+                    "52335cdf-85a8-4dd3-a67d-7ae1e5a0bfaa"
+                ],
+                "isrelatedto": [
+                    "52335cdf-85a8-4dd3-a67d-7ae1e5a0bfaa",
+                    "0250e9ef-924e-4fa9-9dc6-6e1c9708c558"
+                ]
+            },
+            "2fb3f9d3-308c-493e-877e-2cdd4b5d57b3": {
+                "source": {
+                    "id": "96a3f05c-1b47-4bca-b70f-b7012f14e164"
+                },
+                "target": {
+                    "id": "52335cdf-85a8-4dd3-a67d-7ae1e5a0bfaa"
+                },
+                "z": 11
+            },
+            "cc95ae8e-4c0d-477a-818a-57b5dcdbdf8a": {
+                "size": {
+                    "width": 60,
+                    "height": 60
+                },
+                "position": {
+                    "x": 1730,
+                    "y": 1220
+                },
+                "z": 2,
+                "parent": "46544b0b-c9cb-45c8-a60e-35b68f673b43",
+                "embeds": [],
+                "isconnectedto": [
+                    "3863545d-5aaf-435c-951f-d38805f38ce0",
+                    "3f3fc941-0501-4b01-b0f2-3e3220c820da"
+                ],
+                "ismemberof": [
+                    "94e6710d-f321-4d91-9cd5-2b6483fe9b3a"
+                ]
+            },
+            "377800b2-3adc-4310-a057-28a4311db3aa": {
+                "source": {
+                    "id": "cc95ae8e-4c0d-477a-818a-57b5dcdbdf8a"
+                },
+                "target": {
+                    "id": "3863545d-5aaf-435c-951f-d38805f38ce0"
+                },
+                "z": 11
+            },
+            "2e75920e-b670-4e94-9836-d980bd04253a": {
+                "source": {
+                    "id": "cc95ae8e-4c0d-477a-818a-57b5dcdbdf8a"
+                },
+                "target": {
+                    "id": "3f3fc941-0501-4b01-b0f2-3e3220c820da"
+                },
+                "z": 12
+            },
+            "5f7a8859-5f2d-455c-b1f2-f387f24fe7ff": {
+                "source": {
+                    "id": "cc95ae8e-4c0d-477a-818a-57b5dcdbdf8a"
+                },
+                "target": {
+                    "id": "94e6710d-f321-4d91-9cd5-2b6483fe9b3a"
+                },
+                "z": 13
+            },
+            "66789e8a-0429-4aac-aaef-38d967fa0e7b": {
+                "size": {
+                    "width": 60,
+                    "height": 60
+                },
+                "position": {
+                    "x": 1730,
+                    "y": 1000
+                },
+                "z": 2,
+                "parent": "46544b0b-c9cb-45c8-a60e-35b68f673b43",
+                "embeds": [],
+                "isconnectedto": [
+                    "46544b0b-c9cb-45c8-a60e-35b68f673b43"
+                ]
+            },
+            "880b4af1-1442-4b76-93a3-8be252c06586": {
+                "source": {
+                    "id": "66789e8a-0429-4aac-aaef-38d967fa0e7b"
+                },
+                "target": {
+                    "id": "46544b0b-c9cb-45c8-a60e-35b68f673b43"
+                },
+                "z": 11
+            },
+            "a2159522-c157-4d3f-92dc-477d42a64fce": {
+                "size": {
+                    "width": 60,
+                    "height": 60
+                },
+                "position": {
+                    "x": 1730,
+                    "y": 1100
+                },
+                "z": 2,
+                "parent": "46544b0b-c9cb-45c8-a60e-35b68f673b43",
+                "embeds": [],
+                "isconnectedto": [
+                    "cc95ae8e-4c0d-477a-818a-57b5dcdbdf8a"
+                ],
+                "isrelatedto": [
+                    "66789e8a-0429-4aac-aaef-38d967fa0e7b"
+                ]
+            },
+            "d2a18221-4e2b-4a0d-b611-69b5a2e12bdd": {
+                "source": {
+                    "id": "a2159522-c157-4d3f-92dc-477d42a64fce"
+                },
+                "target": {
+                    "id": "cc95ae8e-4c0d-477a-818a-57b5dcdbdf8a"
+                },
+                "z": 11
             }
         }
     }
