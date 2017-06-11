@@ -287,9 +287,7 @@
                     },
                     {
                         "CidrIp": "10.1.0.0/16",
-                        "IpProtocol": "tcp",
-                        "FromPort": 0,
-                        "ToPort": 65535
+                        "IpProtocol": -1
                     }
                 ]
             },

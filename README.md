@@ -57,250 +57,162 @@ If you want to run the commercial database software (Microsoft SQL Server 2014 E
 
 ## Setting up in Amazon Web Services
 
-Install the AWS command line tools
+### Pre-installation software requirements specific to AWS
 
-Build the images if you haven't done the above:
+1) AWS command line tools
 
-    cd appServer/ && mvn clean package && cd .. && docker-compose build
+2) Vagrant (https://www.vagrantup.com) and the vagrant-aws plugin. See the plugin site here for details: https://github.com/mitchellh/vagrant-aws
+
+3) ECS CLI: http://docs.aws.amazon.com/AmazonECS/latest/developerguide/ECS_CLI_installation.html
+
+### Local setup
+
+Build the application if you haven't done so already. This will prepare the docker images and the lambda package.
+
+    (cd appServer/; mvn clean package)
+    docker-compose build
 
 Set your core env variables necessary for working with your AWS account:
 
     export REGION=your region (for example, us-west-2)
+    export AVAILABILITY_ZONE=${REGION}a
     export AWS_ACCESS_KEY_ID=your access key
     export AWS_SECRET_ACCESS_KEY=your secret key
+    export S3_BUCKET=globally-unique S3 bucket name
     export KEYPAIR=your ec2 keypair name
     export PATH_TO_KEYPAIR_PEM=full path to the above $KEYPAIR pem
-    export AWS_ACCOUNT_ID=`aws ec2 describe-security-groups \
-        --query 'SecurityGroups[0].OwnerId' --output text`
+    export APP_DATABASE_IP=10.1.0.16
 
-If you are going to run Oracle, MS SQL Server, etc... specify the amis for the host servers:
+### Commercial databases within AWS
+
+If you are going to run Oracle, MS SQL Server, etc... you will have to have created pre-installed AMI images which have those installed and configured properly. First, follow the general instructions above for setting up each type, but do so within a Windows EC2 instance.
+
+These AMIs need to be configured to call the "registerInstance" Lambda function when their database service is started. The best way to do that is to install the AWS command line tools (or PowerShell tools) and configure them with your account information. When the services start, schedule a task that will execute this lambda function. For example, in Windows PowerShell you could run a script like this:
+
+    Invoke-LMFunction -FunctionName registerInstance -Payload '{ "type": "sqlserver2014" }'
+
+And have that script get triggered when MSSQLSERVER produces an event like "SQL Server is now ready for client connections." See aws/registerSQLServer_on_startup.xml for full details on setting up this task in windows.
+
+Save each instance as a distinct AMI after you have set it up properly.
+
+If and when you have set up the commercial servers, specify the AMIs you created:
 
     export SQLSERVER2014_AMI=your sql server 2014 ami
     export ORACLE11G_AMI=your oracle11g ami
 
-Create a VPC to house the compute resources:
+### Environment creation
 
-    export VPC_ID=`aws ec2 create-vpc --cidr-block 10.1.0.0/16 \
-        --query Vpc.VpcId --output text`
+Create your unique S3 bucket. This is used to store CloudFormation configuration, lambda function packages, and database backups.
 
-    export IGW_ID=`aws ec2 create-internet-gateway \
-        --query InternetGateway.InternetGatewayId --output text`
+    aws --region $REGION s3 mb s3://$S3_BUCKET
 
-    aws ec2 attach-internet-gateway --internet-gateway-id $IGW_ID --vpc-id $VPC_ID
+Upload Lambda function package to your S3 bucket:
 
-    export ROUTE_TABLE_ID_PUBLIC=`aws ec2 describe-route-tables \
-        --filter Name=vpc-id,Values=$VPC_ID --query RouteTables[0].RouteTableId --output text`
+    aws --region $REGION s3 cp appServer/target/sqlfiddle-lambda.zip \
+        s3://$S3_BUCKET/sqlfiddle-lambda.zip
 
-    export SUBNET_ID_PUBLIC=`aws ec2 create-subnet --vpc-id $VPC_ID \
-        --cidr-block 10.1.0.0/24 --availability-zone ${REGION}a \
-        --query Subnet.SubnetId --output text`
+Start the CloudFormation stack to prepare the environment within which the servers will run:
 
-    export SUBNET_ID_PUBLIC_ADDITIONAL=`aws ec2 create-subnet --vpc-id $VPC_ID \
-        --cidr-block 10.1.2.0/24 --availability-zone ${REGION}c \
-        --query Subnet.SubnetId --output text`
+![CloudFormation diagram](aws/cloudformation.png)
 
-    aws ec2 associate-route-table --subnet-id $SUBNET_ID_PUBLIC \
-        --route-table-id $ROUTE_TABLE_ID_PUBLIC
+    aws --region $REGION s3 cp aws/sqlfiddle.template s3://$S3_BUCKET/sqlfiddle.template
+    aws --region $REGION cloudformation create-stack --stack-name sqlfiddle3 \
+        --template-url "https://s3.amazonaws.com/${S3_BUCKET}/sqlfiddle.template" \
+        --parameters \
+            ParameterKey=SQLSERVER2014AMI,ParameterValue=$SQLSERVER2014_AMI \
+            ParameterKey=ORACLE11GAMI,ParameterValue=$ORACLE11G_AMI \
+            ParameterKey=APPDATABASEIP,ParameterValue=$APP_DATABASE_IP \
+        --capabilities CAPABILITY_IAM
 
-    aws ec2 associate-route-table --subnet-id $SUBNET_ID_PUBLIC_ADDITIONAL \
-        --route-table-id $ROUTE_TABLE_ID_PUBLIC
+Monitor the status of the stack creation by using this command:
 
-    aws ec2 create-route --route-table-id $ROUTE_TABLE_ID_PUBLIC \
-        --gateway-id $IGW_ID --destination-cidr-block 0.0.0.0/0
+    aws cloudformation describe-stacks --stack-name sqlfiddle3
 
-    export IP_ALLOCATION_ID=`aws ec2 allocate-address --domain vpc \
-        --query AllocationId --output text`
+When this returns "StackStatus": "CREATE_COMPLETE", run these commands to get important details about your environment needed for later commands:
 
-    export ROUTE_TABLE_ID_PRIVATE=`aws ec2 create-route-table --vpc-id $VPC_ID \
-        --query RouteTable.RouteTableId --output text`
+    export VPC_ID=`aws cloudformation describe-stack-resources \
+        --stack-name sqlfiddle3 --logical-resource-id SQLFIDDLE \
+        --query StackResources[0].PhysicalResourceId --output text`
 
-    export SUBNET_ID_PRIVATE=`aws ec2 create-subnet --vpc-id $VPC_ID \
-        --cidr-block 10.1.1.0/24 --availability-zone ${REGION}b \
-        --query Subnet.SubnetId --output text`
+    export SUBNET_ID_PUBLIC=`aws cloudformation describe-stack-resources \
+        --stack-name sqlfiddle3 --logical-resource-id PUBLICPRIMARY \
+        --query StackResources[0].PhysicalResourceId --output text`
 
-    aws ec2 associate-route-table --subnet-id $SUBNET_ID_PRIVATE \
-        --route-table-id $ROUTE_TABLE_ID_PRIVATE
+    export SUBNET_ID_PUBLIC_ADDITIONAL=`aws cloudformation describe-stack-resources \
+        --stack-name sqlfiddle3 --logical-resource-id PUBLICADDITIONAL \
+        --query StackResources[0].PhysicalResourceId --output text`
 
-    export NAT_GW_ID=`aws ec2 create-nat-gateway --subnet-id $SUBNET_ID_PUBLIC \
-        --allocation-id $IP_ALLOCATION_ID --query NatGateway.NatGatewayId --output text`
+    export SECURITY_GROUP_ID=`aws cloudformation describe-stack-resources \
+        --stack-name sqlfiddle3 --logical-resource-id SECGROUP \
+        --query StackResources[0].PhysicalResourceId --output text`
 
-Wait here a few moments. Creating the NAT Gateway takes some time
-
-    aws ec2 create-route --route-table-id $ROUTE_TABLE_ID_PRIVATE \
-        --gateway-id $NAT_GW_ID --destination-cidr-block 0.0.0.0/0
-
-    export SECURITY_GROUP_ID=`aws ec2 create-security-group --vpc-id $VPC_ID \
-        --group-name sqlfiddle_group --description "Rules for SQLFiddle Resources" \
-        --query GroupId --output text`
-
-    aws ec2 authorize-security-group-ingress --group-id $SECURITY_GROUP_ID \
-        --protocol tcp --port 80 --cidr 0.0.0.0/0
-
-    aws ec2 authorize-security-group-ingress --group-id $SECURITY_GROUP_ID \
-        --protocol tcp --port 22 --cidr 0.0.0.0/0
-
-    aws ec2 authorize-security-group-ingress --group-id $SECURITY_GROUP_ID \
-        --cidr 10.1.0.0/16 --protocol all
-
-
-
-Install Vagrant (https://www.vagrantup.com) and the vagrant-aws plugin. See the plugin site here for details: https://github.com/mitchellh/vagrant-aws
+    export TARGET_GROUP_ARN=`aws cloudformation describe-stack-resources \
+        --stack-name sqlfiddle3 --logical-resource-id TARGETGROUP \
+        --query StackResources[0].PhysicalResourceId --output text`
 
 Use vagrant to create a dedicated EC2 instance to run the persisted PostgreSQL appDatabase:
 
-    export APP_DATABASE_IP=10.1.0.16
-    export AVAILABILITY_ZONE=${REGION}a
     (cd appDatabase; vagrant up --provider=aws)
 
 This will also setup a daily full backup of the database to write to your S3 account (see appDatabase/vagrant_scripts/s3_backup.sh and s3cfg_template for details).
 
 If there is already a backup of the sqlfiddle database stored in your S3 account, this will also automatically restore that backup into this new instance.
 
-Create IAM roles for Lambda execution and ecs/ec2 scaling:
-
-    aws iam create-instance-profile --instance-profile-name hostMaintenance
-
-    export HOST_MAINTENANCE_ROLE_ARN=`aws iam create-role --role-name hostMaintenance \
-      --assume-role-policy-document file://aws/iam_trust_policy.json \
-      --query Role.Arn --output text`
-
-    aws iam put-role-policy --role-name hostMaintenance \
-      --policy-name hostMaintenance --policy-document file://aws/iam_policy.json
-
-    aws iam add-role-to-instance-profile \
-      --instance-profile-name hostMaintenance \
-      --role-name hostMaintenance
-
-Create Lambda functions which will register your host database servers and keep them fresh:
-
-    aws lambda create-function --function-name addTask \
-        --runtime nodejs6.10 --role $HOST_MAINTENANCE_ROLE_ARN \
-        --handler manageECS.addTask --timeout 10 \
-        --environment Variables="{CLUSTERNAME=sqlfiddle3}" \
-        --zip-file fileb://appServer/target/sqlfiddle-lambda.zip
-
-    aws lambda create-function --function-name deleteTask \
-        --runtime nodejs6.10 --role $HOST_MAINTENANCE_ROLE_ARN \
-        --handler manageECS.deleteTask --timeout 10 \
-        --environment Variables="{CLUSTERNAME=sqlfiddle3}" \
-        --zip-file fileb://appServer/target/sqlfiddle-lambda.zip
-
-    aws lambda create-function \
-        --function-name registerInstance \
-        --runtime nodejs6.10 --role $HOST_MAINTENANCE_ROLE_ARN \
-        --handler manageEC2.registerInstance --timeout 10 \
-        --environment Variables="{SQLSERVER2014_AMI=$SQLSERVER2014_AMI,ORACLE11G_AMI=$ORACLE11G_AMI,VPC_ID=${VPC_ID}}" \
-        --zip-file fileb://appServer/target/sqlfiddle-lambda.zip
-
-    aws lambda create-function --function-name runInstanceType \
-        --runtime nodejs6.10 --role $HOST_MAINTENANCE_ROLE_ARN \
-        --handler manageEC2.runInstanceType --timeout 10 \
-        --environment Variables="{SQLSERVER2014_AMI=$SQLSERVER2014_AMI,ORACLE11G_AMI=$ORACLE11G_AMI,SUBNET_ID=${SUBNET_ID_PUBLIC}}" \
-        --zip-file fileb://appServer/target/sqlfiddle-lambda.zip
-
-    aws lambda create-function --function-name terminateInstance \
-        --runtime nodejs6.10 --role $HOST_MAINTENANCE_ROLE_ARN \
-        --handler manageEC2.terminateInstance --timeout 10 \
-        --zip-file fileb://appServer/target/sqlfiddle-lambda.zip
-
-    export OVERUSED_HOSTS_ARN=`aws lambda create-function \
-        --function-name checkForOverusedHosts \
-        --runtime nodejs6.10 --role $HOST_MAINTENANCE_ROLE_ARN \
-        --handler hostMaintenance.checkForOverusedHosts --timeout 10 \
-        --environment Variables="{postgresHost=$APP_DATABASE_IP,postgresUser=postgres,postgresPassword=password,MAX_SCHEMAS_PER_HOST=100}" \
-        --zip-file fileb://appServer/target/sqlfiddle-lambda.zip \
-        --vpc-config SubnetIds=$SUBNET_ID_PRIVATE,SecurityGroupIds=$SECURITY_GROUP_ID \
-        --query FunctionArn --output text`
-
-    aws lambda create-function --function-name syncHosts \
-        --runtime nodejs6.10 --role $HOST_MAINTENANCE_ROLE_ARN \
-        --handler hostMaintenance.syncHosts --timeout 10 \
-        --environment Variables="{postgresHost=$APP_DATABASE_IP,postgresUser=postgres,postgresPassword=password}" \
-        --zip-file fileb://appServer/target/sqlfiddle-lambda.zip \
-        --vpc-config SubnetIds=$SUBNET_ID_PRIVATE,SecurityGroupIds=$SECURITY_GROUP_ID
-
-    export LAMBDA_ARN=`aws lambda create-function --function-name updateHostRegistry \
-        --runtime nodejs6.10 --role $HOST_MAINTENANCE_ROLE_ARN \
-        --handler manageECS.updateHostRegistry --timeout 10 \
-        --environment Variables="{CLUSTERNAME=sqlfiddle3}" \
-        --zip-file fileb://appServer/target/sqlfiddle-lambda.zip \
-        --query FunctionArn --output text`
-
-Create an API Gateway interface to the above Lambda function (updateHostRegistry):
-
-    export API_GATEWAY_ID=`aws apigateway create-rest-api --name SQLFiddleLambda \
-      --query id --output text`
-
-    export API_ROOT_RESOURCE_ID=`aws apigateway get-resources \
-      --rest-api-id $API_GATEWAY_ID --query items[0].id --output text`
-
-    export API_RESOURCE_ID=`aws apigateway create-resource \
-      --rest-api-id $API_GATEWAY_ID \
-      --parent-id $API_ROOT_RESOURCE_ID --path 'updateHostRegistry' \
-      --query id --output text`
-
-    aws apigateway put-method --rest-api-id $API_GATEWAY_ID \
-      --resource-id $API_RESOURCE_ID \
-      --http-method GET \
-      --authorization-type NONE
-
-    aws apigateway put-integration --rest-api-id $API_GATEWAY_ID \
-      --resource-id $API_RESOURCE_ID \
-      --http-method GET \
-      --type AWS_PROXY \
-      --integration-http-method POST \
-      --uri arn:aws:apigateway:$REGION:lambda:path/2015-03-31/functions/$LAMBDA_ARN/invocations
-
-    aws apigateway put-integration-response --rest-api-id $API_GATEWAY_ID \
-      --resource-id $API_RESOURCE_ID \
-      --http-method GET --status-code 200 --selection-pattern ".*"
-
-    aws apigateway create-deployment --rest-api-id $API_GATEWAY_ID --stage-name prod
-
-    aws lambda add-permission \
-        --function-name $LAMBDA_ARN \
-        --statement-id updateHostRegistryPermission \
-        --action lambda:InvokeFunction \
-        --principal apigateway.amazonaws.com \
-        --source-arn "arn:aws:execute-api:$REGION:$AWS_ACCOUNT_ID:$API_GATEWAY_ID/prod/*/updateHostRegistry"
-
-    aws lambda add-permission \
-        --function-name $LAMBDA_ARN \
-        --statement-id updateHostRegistryPermissionTest \
-        --action lambda:InvokeFunction \
-        --principal apigateway.amazonaws.com \
-        --source-arn "arn:aws:execute-api:$REGION:$AWS_ACCOUNT_ID:$API_GATEWAY_ID/*/*/updateHostRegistry"
-
-    export LAMBDA_NOTIFICATION_URL="https://$API_GATEWAY_ID.execute-api.$REGION.amazonaws.com/prod/updateHostRegistry"
-
-Create a new ECR repository ('sqlfiddle'):
+Create a new ECR repository to house your docker images ('sqlfiddle'):
 
     eval $(aws ecr get-login --region $REGION)
     export ECR_URI=`aws ecr create-repository --repository-name sqlfiddle \
-      --query repository.repositoryUri --output text`
+        --query repository.repositoryUri --output text`
 
 Upload the docker images to ECR:
 
-    docker tag sqlfiddle:appServer $ECR_URI:appServer && docker push $ECR_URI:appServer
-    docker tag sqlfiddle:mysql56Host $ECR_URI:mysql56Host && docker push $ECR_URI:mysql56Host
-    docker tag sqlfiddle:postgresql93Host $ECR_URI:postgresql93Host && docker push $ECR_URI:postgresql93Host
+    docker tag sqlfiddle:appServer $ECR_URI:appServer
+    docker push $ECR_URI:appServer
+    docker tag sqlfiddle:mysql56Host $ECR_URI:mysql56Host
+    docker push $ECR_URI:mysql56Host
+    docker tag sqlfiddle:postgresql93Host $ECR_URI:postgresql93Host
+    docker push $ECR_URI:postgresql93Host
 
 Pushing may take a long time. If it gets stalled out, use `docker-machine restart` between attempts
-
-Install the ECS CLI: http://docs.aws.amazon.com/AmazonECS/latest/developerguide/ECS_CLI_installation.html
 
 Configure your ecs-cli environment to work with this cluster:
 
     ecs-cli configure --region $REGION --access-key $AWS_ACCESS_KEY_ID \
-      --secret-key $AWS_SECRET_ACCESS_KEY --cluster sqlfiddle3
+        --secret-key $AWS_SECRET_ACCESS_KEY --cluster sqlfiddle3
 
 Start the cluster with two t2.medium container instances, spread between the subnets:
 
     ecs-cli up --keypair $KEYPAIR -capability-iam --size 2 \
-      --instance-type t2.medium --security-group $SECURITY_GROUP_ID \
-      --vpc $VPC_ID --subnets $SUBNET_ID_PUBLIC,$SUBNET_ID_PUBLIC_ADDITIONAL --force
+        --instance-type t2.medium --security-group $SECURITY_GROUP_ID \
+        --vpc $VPC_ID --subnets $SUBNET_ID_PUBLIC,$SUBNET_ID_PUBLIC_ADDITIONAL --force
 
-Bring the database services up:
+Bring the appServer instances up:
+
+    ecs-cli compose --file aws/docker-compose-appServer.yml \
+        --project-name appServer service up \
+        --target-group-arn $TARGET_GROUP_ARN \
+        --role ecsServiceRole --container-name appServer --container-port 8080
+
+    ecs-cli compose --file aws/docker-compose-appServer.yml \
+        --project-name appServer service scale 2
+
+Get the DNS entry needed to access the cluster:
+
+    export ELB_ARN=`aws cloudformation describe-stack-resources \
+        --stack-name sqlfiddle3 --logical-resource-id ELB \
+        --query StackResources[0].PhysicalResourceId --output text`
+
+    aws elbv2 describe-load-balancers --load-balancer-arns $ELB_ARN \
+        --query LoadBalancers[0].DNSName --output text
+
+Use the output from that command to view the running application in your browser. For example,
+    http://sqlfiddle3ELB-987654321.us-west-2.elb.amazonaws.com/
+
+If you want a more friendly DNS entry, use Route 53 to host your domain and set the A record to have an alias target which points to the ELB DNSName returned above, or use a CNAME alias on a non-TLD record.
+
+The site is now usable, but has no backend hosts available to execute queries (only SQLite will be available, since that runs in the browser). To get the backend hosts running, follow the next steps to start them up and register them within the "hosts" table of the appDatabase.
+
+Bring the docker-based database services up:
 
     ecs-cli compose --file aws/docker-compose-mysql56.yml \
       --project-name mysql56 service up
@@ -315,54 +227,14 @@ Bring any commercial database servers that are running on EC2 hosts (not docker 
     aws ec2 run-instances --instance-type t2.small \
         --subnet-id $SUBNET_ID_PUBLIC --image-id $ORACLE11G_AMI
 
-These AMIs need to be configured to call the registerInstance Lambda function when their database server is started. The best way to do that is to install the AWS command line tools (or PowerShell tools) and configure them with your account information. When the services start, schedule a task that will execute this lambda function. For example, in Windows PowerShell you could run a script like this:
-
-    Invoke-LMFunction -FunctionName registerInstance -Payload '{ "type": "sqlserver2014" }'
-
-And have that script get triggered when MSSQLSERVER produces an event like "SQL Server is now ready for client connections. This is an informational message; no user action is required." See aws/registerSQLServer_on_startup.xml for full details on setting up this task in windows.
-
 The various invocations of Lambda functions (either from EC2 or ECS) will result in the registration of each server within the "hosts" table running on the appDatabase server. Once registered there, they will be usable to the appServer instances which will be created next.
 
-Schedule CloudWatch Events to monitor the tasks using the above Lambda functions, refreshing them as needed:
+### Environment destruction
 
-    export EVENT_RULE_ARN=`aws events put-rule --name checkForOverusedHosts \
-        --schedule-expression "rate(5 minutes)" \
-        --role-arn $HOST_MAINTENANCE_ROLE_ARN --query RuleArn --output text`
+If you have created any EC2 instances for Oracle or SQL Server, terminate them manually.
 
-    aws events put-targets --rule checkForOverusedHosts \
-        --targets "Id=LambdaFunc,Arn=$OVERUSED_HOSTS_ARN"
+To undo all of the above, run these commands:
 
-Create an Application Load Balancer to access the appServer services:
-
-    export ELB_ARN=`aws elbv2 create-load-balancer --name sqlfiddle3ELB \
-      --subnets $SUBNET_ID_PUBLIC $SUBNET_ID_PUBLIC_ADDITIONAL \
-      --security-groups $SECURITY_GROUP_ID \
-      --query LoadBalancers[0].LoadBalancerArn --output text`
-
-    export TARGET_GROUP_ARN=`aws elbv2 create-target-group \
-      --name appServerGroup --protocol HTTP --port 80 --vpc-id $VPC_ID \
-      --query TargetGroups[0].TargetGroupArn --output text`
-
-    aws elbv2 create-listener --load-balancer-arn $ELB_ARN \
-      --default-actions Type=forward,TargetGroupArn=$TARGET_GROUP_ARN \
-      --protocol HTTP --port 80
-
-Bring the appServer instances up:
-
-    ecs-cli compose --file aws/docker-compose-appServer.yml \
-      --project-name appServer service up \
-      --target-group-arn $TARGET_GROUP_ARN \
-      --role ecsServiceRole --container-name appServer --container-port 8080
-
-    ecs-cli compose --file aws/docker-compose-appServer.yml \
-      --project-name appServer service scale 2
-
-Get the DNS entry needed to access the cluster:
-
-    aws elbv2 describe-load-balancers --load-balancer-arns $ELB_ARN \
-       --query LoadBalancers[0].DNSName --output text
-
-Use the output from that command to view the running application in your browser. For example,
- http://sqlfiddle3ELB-987654321.us-west-2.elb.amazonaws.com/
-
-If you want a more friendly DNS entry, use Route 53 to host your domain and set the A record to have an alias target which points to the ELB DNSName returned above, or use a CNAME alias on a non-TLD record.
+    ecs-cli down --force
+    (cd appDatabase; vagrant destroy)
+    aws --region $REGION cloudformation delete-stack --stack-name sqlfiddle3

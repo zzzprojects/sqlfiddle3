@@ -30,7 +30,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
             'VirtualName' => "postgresql_data",
             'DeviceName' => '/dev/sda1',
             'Ebs.VolumeSize' => 50,
-            'Ebs.DeleteOnTermination' => true,
+            'Ebs.DeleteOnTermination' => false,
             'Ebs.VolumeType' => 'io1',
             'Ebs.Iops' => 500
         }]
