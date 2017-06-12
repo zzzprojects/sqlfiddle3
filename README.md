@@ -12,21 +12,22 @@ It is also implemented with Vert.x in the application tier.
 
 To get running locally:
 
-    $ cd appServer/ && mvn clean package && cd .. && docker-compose up -d
+    (cd appServer/; mvn clean package)
+    docker-compose up -d
 
 After you run the above command, you can open the site by visiting http://localhost:8080
 
 If building on a Mac, be sure to prep docker first:
 
-    $ docker-machine start
-    $ eval $(docker-machine env)
+    docker-machine start
+    eval $(docker-machine env)
 
 Also, you'll have to access the site via the docker-machine ip address, like so:
 
-    $ docker-machine ip
-    192.168.99.101
+    docker-machine ip
+    > 192.168.99.100
 
-Then you can access the site by visiting http://192.168.99.101:8080
+Then you can access the site by visiting http://192.168.99.100:8080
 
 ## To do development in a local environment:
 
@@ -40,7 +41,7 @@ Then you can access the site by visiting http://192.168.99.101:8080
 
 ## Commercial software requirements
 
-If you want to run the commercial database software (Microsoft SQL Server 2014 Express, Oracle 11g R2 XE) you must have a Windows Server 2008 R2 (or higher) server available. The core software must be installed prior to attempting to use it with SQL Fiddle. Below are the requirements for how the commercial databases should be installed. The docker-compose file assumes this server is listening at ip address 192.168.99.101
+If you want to run the commercial database software (Microsoft SQL Server 2014 Express, Oracle 11g R2 XE) you must have a Windows Server 2008 R2 (or higher) server available. The core software must be installed prior to attempting to using it with SQL Fiddle. Below are the requirements for how the commercial databases should be installed. The docker-compose file assumes this server is listening at ip address 192.168.99.101
 
 ### SQL Server 2014 Express
 
@@ -113,7 +114,7 @@ Upload Lambda function package to your S3 bucket:
 
 Start the CloudFormation stack to prepare the environment within which the servers will run:
 
-![CloudFormation diagram](aws/cloudformation.png)
+![CloudFormation diagram](aws/cloudformation.png?raw=true)
 
     aws --region $REGION s3 cp aws/sqlfiddle.template s3://$S3_BUCKET/sqlfiddle.template
     aws --region $REGION cloudformation create-stack --stack-name sqlfiddle3 \
