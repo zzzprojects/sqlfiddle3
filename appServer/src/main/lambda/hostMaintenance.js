@@ -11,7 +11,7 @@ const postgresConnectionConfig = {
 // ipAddress, port and connection_meta are optional
 var getHostTemplate = (hostType, ipAddress, port, connection_meta) => {
     var hostTemplates = {
-        "mysql56Host": {
+        "ecscompose-mysql56": {
             "full_name": "MySQL 5.6",
             "jdbc_url_template": `jdbc:mysql://${ipAddress}:${port}/#databaseName#?allowMultiQueries=true&useLocalTransactionState=true&useUnicode=true&characterEncoding=UTF-8`,
             "default_database": "mysql",
@@ -19,7 +19,7 @@ var getHostTemplate = (hostType, ipAddress, port, connection_meta) => {
             "admin_password": "password",
             connection_meta
         },
-        "postgresql93Host": {
+        "ecscompose-postgresql93": {
             "full_name": "PostgreSQL 9.3",
             "jdbc_url_template": `jdbc:postgresql://${ipAddress}:${port}/#databaseName#`,
             "default_database": "postgres",

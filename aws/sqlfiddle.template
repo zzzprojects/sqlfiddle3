@@ -675,7 +675,7 @@
                 "Targets": [
                     {
                         "Arn": {
-                            "Fn::GetAtt" : [
+                            "Fn::GetAtt": [
                                 "CHECKFOROVERUSEDHOSTS",
                                 "Arn"
                             ]
@@ -750,6 +750,64 @@
             "Metadata": {
                 "AWS::CloudFormation::Designer": {
                     "id": "a2159522-c157-4d3f-92dc-477d42a64fce"
+                }
+            }
+        },
+        "ECSSTATECHANGE": {
+            "Type": "AWS::Events::Rule",
+            "Properties": {
+                "Name": "ecsStartedRunning",
+                "RoleArn": {
+                    "Fn::GetAtt": [
+                        "HOSTMAINTENANCEROLE",
+                        "Arn"
+                    ]
+                },
+                "EventPattern": {
+                    "source": [
+                        "aws.ecs"
+                    ],
+                    "detail-type": [
+                        "ECS Task State Change"
+                    ]
+                },
+                "Targets": [
+                    {
+                        "Arn": {
+                            "Fn::GetAtt": [
+                                "UPDATEHOSTREGISTRY",
+                                "Arn"
+                            ]
+                        },
+                        "Id": "ecsStartedRule",
+                        "InputPath": "$.detail.taskDefinitionArn"
+                    }
+                ]
+            },
+            "Metadata": {
+                "AWS::CloudFormation::Designer": {
+                    "id": "a480a2c1-75bf-4e0c-a6b0-a8274ef45d5d"
+                }
+            }
+        },
+        "UPDATEHOSTREGISTRYEVENTPERMISSION": {
+            "Type": "AWS::Lambda::Permission",
+            "Properties": {
+                "Action": "lambda:InvokeFunction",
+                "FunctionName": {
+                    "Ref": "UPDATEHOSTREGISTRY"
+                },
+                "Principal": "events.amazonaws.com",
+                "SourceArn": {
+                    "Fn::GetAtt": [
+                        "ECSSTATECHANGE",
+                        "Arn"
+                    ]
+                }
+            },
+            "Metadata": {
+                "AWS::CloudFormation::Designer": {
+                    "id": "62d41bdd-f40c-4f07-aff1-5a21648dff47"
                 }
             }
         }
@@ -1354,6 +1412,58 @@
                     "id": "cc95ae8e-4c0d-477a-818a-57b5dcdbdf8a"
                 },
                 "z": 11
+            },
+            "a480a2c1-75bf-4e0c-a6b0-a8274ef45d5d": {
+                "size": {
+                    "width": 60,
+                    "height": 60
+                },
+                "position": {
+                    "x": 2040,
+                    "y": 1370
+                },
+                "z": 0,
+                "embeds": [],
+                "isrelatedto": [
+                    "94565b7d-1b81-4ebf-a48b-8f33008c971b",
+                    "0250e9ef-924e-4fa9-9dc6-6e1c9708c558"
+                ]
+            },
+            "62d41bdd-f40c-4f07-aff1-5a21648dff47": {
+                "size": {
+                    "width": 60,
+                    "height": 60
+                },
+                "position": {
+                    "x": 2130,
+                    "y": 1290
+                },
+                "z": 0,
+                "embeds": [],
+                "isassociatedwith": [
+                    "94565b7d-1b81-4ebf-a48b-8f33008c971b"
+                ],
+                "dependson": [
+                    "a480a2c1-75bf-4e0c-a6b0-a8274ef45d5d"
+                ]
+            },
+            "c0bc200e-24e4-4b41-8e29-3a33d441843c": {
+                "source": {
+                    "id": "62d41bdd-f40c-4f07-aff1-5a21648dff47"
+                },
+                "target": {
+                    "id": "94565b7d-1b81-4ebf-a48b-8f33008c971b"
+                },
+                "z": 11
+            },
+            "0ef6dcef-2723-4732-b8a6-02e7442a8ea4": {
+                "source": {
+                    "id": "62d41bdd-f40c-4f07-aff1-5a21648dff47"
+                },
+                "target": {
+                    "id": "a480a2c1-75bf-4e0c-a6b0-a8274ef45d5d"
+                },
+                "z": 12
             }
         }
     }

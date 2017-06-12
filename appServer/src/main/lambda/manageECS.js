@@ -60,45 +60,40 @@ exports.deleteTask = (event, context, callback) => {
 
 /**
  * This lambda function is expected to be called from API Gateway
- * event is expected to have this structure:
- {
-   "queryStringParameters": {
-   "containerType": "mysql56Host"
-   }
- }
+ * event is expected to have the value of a taskDefinitionArn, like so:
+
+"arn:aws:ecs:us-west-2:321080263678:task-definition/ecscompose-mysql56:6"
 
 environment variable "CLUSTERNAME" is expected to be set (e.g. sqlfiddle3)
 
-Expected to be called when a new container is brought online or one is taken offline.
+Expected to be called when a new task is brought online or one is taken offline.
  */
 exports.updateHostRegistry = (event, context, callback) => {
     var AWS = require('aws-sdk'),
         lambda = new AWS.Lambda({"apiVersion": '2015-03-31'}),
         cluster = process.env.CLUSTERNAME,
-        containerType = event.queryStringParameters.containerType;
+        taskDefinitionArn = event,
+        serviceName = taskDefinitionArn.split('/').slice(-1)[0].split(":")[0];
 
-    this.getAllHostsForContainerType(cluster, containerType).then((hostConnections) => {
+    this.getAllHostsForContainerType(cluster, taskDefinitionArn)
+    .then((hostConnections) =>
         lambda.invoke({
             FunctionName: "syncHosts",
             Payload: JSON.stringify({
                 hostConnections,
-                hostType: containerType
+                hostType: serviceName
             })
-        }, (err, data) => {
-            callback(null, {
-                "statusCode": 200,
-                "headers": {},
-                "body": data.Payload
-            });
-        });
-
-    });
+        }).promise()
+    )
+    .then((data) =>
+        callback(null, data)
+    );
 };
 
 
 /**
  * @param {String} - cluster - name of the cluster to query, e.g. "sqlfiddle3"
- * @param {String} - containerType - name of the container to search for within the cluster
+ * @param {String} - taskDefinitionArn - arn of the taskDefinition to search for within the cluster
  * @returns {Promise} - promise resolved with a list of ip/port combinations found for this container name, like so:
     [
       {
@@ -109,7 +104,7 @@ exports.updateHostRegistry = (event, context, callback) => {
     ]
  *
  */
-exports.getAllHostsForContainerType = (cluster, containerType) => {
+exports.getAllHostsForContainerType = (cluster, taskDefinitionArn) => {
     var AWS = require('aws-sdk'),
         ecs = new AWS.ECS({"apiVersion": '2014-11-13'}),
         ec2 = new AWS.EC2({"apiVersion": '2016-11-15'});
@@ -119,9 +114,7 @@ exports.getAllHostsForContainerType = (cluster, containerType) => {
     .then((taskDetails) => {
         var containersForName = taskDetails.tasks
             .filter((taskDetail) =>
-                taskDetail.containers.filter(
-                    (container) => container.name === containerType
-                ).length > 0
+                taskDetail.taskDefinitionArn === taskDefinitionArn
             )
             .map((taskDetail) =>
                 taskDetail.containers.map((container) => {
