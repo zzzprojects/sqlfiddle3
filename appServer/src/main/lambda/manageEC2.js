@@ -24,8 +24,11 @@ exports.runInstanceType = (event, context, callback) => {
         ImageId: typeDetail.ImageId,
         MinCount: 1,
         MaxCount: 1,
-        InstanceType: "t2.small",
-        SubnetId: process.env.SUBNET_ID
+        InstanceType: "t2.micro",
+        SubnetId: process.env.SUBNET_ID,
+        SecurityGroupIds: [
+            process.env.SECURITY_GROUP_ID
+        ]
     }, callback);
 };
 
