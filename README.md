@@ -105,19 +105,19 @@ If and when you have set up the commercial servers, specify the AMIs you created
 
 Create your unique S3 bucket. This is used to store CloudFormation configuration, lambda function packages, and database backups.
 
-    aws --region $REGION s3 mb s3://$S3_BUCKET
+    aws s3 mb s3://$S3_BUCKET
 
 Upload Lambda function package to your S3 bucket:
 
-    aws --region $REGION s3 cp appServer/target/sqlfiddle-lambda.zip \
+    aws s3 cp appServer/target/sqlfiddle-lambda.zip \
         s3://$S3_BUCKET/sqlfiddle-lambda.zip
 
 Start the CloudFormation stack to prepare the environment within which the servers will run:
 
 ![CloudFormation diagram](aws/cloudformation.png?raw=true)
 
-    aws --region $REGION s3 cp aws/sqlfiddle.template s3://$S3_BUCKET/sqlfiddle.template
-    aws --region $REGION cloudformation create-stack --stack-name sqlfiddle3 \
+    aws s3 cp aws/sqlfiddle.template s3://$S3_BUCKET/sqlfiddle.template
+    aws cloudformation create-stack --stack-name sqlfiddle3 \
         --template-url "https://s3.amazonaws.com/${S3_BUCKET}/sqlfiddle.template" \
         --parameters \
             ParameterKey=SQLSERVER2014AMI,ParameterValue=$SQLSERVER2014_AMI \
@@ -238,4 +238,4 @@ To undo all of the above, run these commands:
 
     ecs-cli down --force
     (cd appDatabase; vagrant destroy)
-    aws --region $REGION cloudformation delete-stack --stack-name sqlfiddle3
+    aws cloudformation delete-stack --stack-name sqlfiddle3
