@@ -222,11 +222,11 @@ Bring the docker-based database services up:
 
 Bring any commercial database servers that are running on EC2 hosts (not docker containers):
 
-    aws ec2 run-instances --instance-type t2.small \
-        --subnet-id $SUBNET_ID_PUBLIC --image-id $SQLSERVER2014_AMI
+    aws lambda invoke --function-name 'runInstanceType' \
+        --payload '{"type": "oracle11g"}' lambdaResults.json
 
-    aws ec2 run-instances --instance-type t2.small \
-        --subnet-id $SUBNET_ID_PUBLIC --image-id $ORACLE11G_AMI
+    aws lambda invoke --function-name 'runInstanceType' \
+        --payload '{"type": "sqlserver2014"}' lambdaResults.json
 
 The various invocations of Lambda functions (either from EC2 or ECS) will result in the registration of each server within the "hosts" table running on the appDatabase server. Once registered there, they will be usable to the appServer instances which will be created next.
 

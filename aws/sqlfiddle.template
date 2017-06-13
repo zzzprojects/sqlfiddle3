@@ -496,7 +496,7 @@
                             "Ref": "ORACLE11GAMI"
                         },
                         "SUBNET_ID": {
-                            "Ref": "PUBLICPRIMARY"
+                            "Ref": "PRIVATESUB"
                         },
                         "SECURITY_GROUP_ID": {
                             "Ref": "SECGROUP"
