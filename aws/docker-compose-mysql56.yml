@@ -4,5 +4,3 @@ services:
     image: "$ECR_URI:mysql56Host"
     ports:
     - "0:3306"
-    environment:
-        - LAMBDA_NOTIFICATION_URL

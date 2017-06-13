@@ -4,5 +4,3 @@ services:
     image: "$ECR_URI:postgresql93Host"
     ports:
     - "0:5432"
-    environment:
-        - LAMBDA_NOTIFICATION_URL
