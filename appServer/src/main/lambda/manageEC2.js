@@ -95,7 +95,7 @@ exports.registerInstance = (event, context, callback) => {
                         ip: instance.PrivateIpAddress
                     })
                 ),
-                hostType: typeDetail.type
+                hostType: event.type
             })
         }).promise()
     )
