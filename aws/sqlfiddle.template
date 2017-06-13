@@ -223,7 +223,7 @@
             "Type": "AWS::EC2::NatGateway",
             "Properties": {
                 "SubnetId": {
-                    "Ref": "PRIVATESUB"
+                    "Ref": "PUBLICPRIMARY"
                 },
                 "AllocationId": {
                     "Fn::GetAtt": [
@@ -810,6 +810,27 @@
                     "id": "62d41bdd-f40c-4f07-aff1-5a21648dff47"
                 }
             }
+        },
+        "CHECKFOROVERUSEDHOSTSPERMISSION": {
+            "Type": "AWS::Lambda::Permission",
+            "Properties": {
+                "Action": "lambda:InvokeFunction",
+                "FunctionName": {
+                    "Ref": "CHECKFOROVERUSEDHOSTS"
+                },
+                "Principal": "events.amazonaws.com",
+                "SourceArn": {
+                    "Fn::GetAtt": [
+                        "CHECKFOROVERUSEDHOSTSEVENT",
+                        "Arn"
+                    ]
+                }
+            },
+            "Metadata": {
+                "AWS::CloudFormation::Designer": {
+                    "id": "0ef4faaf-ece7-4737-a90f-e3875f857c38"
+                }
+            }
         }
     },
     "Metadata": {
@@ -890,8 +911,7 @@
                 "parent": "46544b0b-c9cb-45c8-a60e-35b68f673b43",
                 "embeds": [
                     "ca662395-2c32-4de3-99ec-b00c585586d4",
-                    "52335cdf-85a8-4dd3-a67d-7ae1e5a0bfaa",
-                    "6b34d31d-cdb3-4c13-aac1-243e2bfda003"
+                    "52335cdf-85a8-4dd3-a67d-7ae1e5a0bfaa"
                 ]
             },
             "6b34d31d-cdb3-4c13-aac1-243e2bfda003": {
@@ -900,11 +920,11 @@
                     "height": 60
                 },
                 "position": {
-                    "x": 1340,
-                    "y": 1470
+                    "x": 1580,
+                    "y": 1040
                 },
                 "z": 3,
-                "parent": "846cac16-c276-48c6-93ef-deec64df4ae3",
+                "parent": "3863545d-5aaf-435c-951f-d38805f38ce0",
                 "embeds": [],
                 "isrelatedto": [
                     "95a2e943-d9e9-4167-b16f-9baed067f113"
@@ -936,7 +956,9 @@
                 },
                 "z": 2,
                 "parent": "46544b0b-c9cb-45c8-a60e-35b68f673b43",
-                "embeds": []
+                "embeds": [
+                    "6b34d31d-cdb3-4c13-aac1-243e2bfda003"
+                ]
             },
             "f87a3810-71dd-40a2-93a2-b7d1544904b5": {
                 "size": {
@@ -1030,8 +1052,8 @@
                     "height": 60
                 },
                 "position": {
-                    "x": 1110,
-                    "y": 1480
+                    "x": 1100,
+                    "y": 970
                 },
                 "z": 0,
                 "embeds": []
@@ -1042,7 +1064,7 @@
                     "height": 60
                 },
                 "position": {
-                    "x": 1340,
+                    "x": 1380,
                     "y": 1280
                 },
                 "z": 3,
@@ -1195,7 +1217,7 @@
                     "height": 60
                 },
                 "position": {
-                    "x": 1510,
+                    "x": 1480,
                     "y": 1530
                 },
                 "z": 3,
@@ -1213,8 +1235,8 @@
                     "height": 60
                 },
                 "position": {
-                    "x": 1510,
-                    "y": 1460
+                    "x": 1340,
+                    "y": 1530
                 },
                 "z": 3,
                 "parent": "846cac16-c276-48c6-93ef-deec64df4ae3",
@@ -1419,8 +1441,8 @@
                     "height": 60
                 },
                 "position": {
-                    "x": 2040,
-                    "y": 1370
+                    "x": 2070,
+                    "y": 1390
                 },
                 "z": 0,
                 "embeds": [],
@@ -1435,8 +1457,8 @@
                     "height": 60
                 },
                 "position": {
-                    "x": 2130,
-                    "y": 1290
+                    "x": 2150,
+                    "y": 1390
                 },
                 "z": 0,
                 "embeds": [],
@@ -1445,6 +1467,10 @@
                 ],
                 "dependson": [
                     "a480a2c1-75bf-4e0c-a6b0-a8274ef45d5d"
+                ],
+                "isrelatedto": [
+                    "a480a2c1-75bf-4e0c-a6b0-a8274ef45d5d",
+                    "96a3f05c-1b47-4bca-b70f-b7012f14e164"
                 ]
             },
             "c0bc200e-24e4-4b41-8e29-3a33d441843c": {
@@ -1464,6 +1490,34 @@
                     "id": "a480a2c1-75bf-4e0c-a6b0-a8274ef45d5d"
                 },
                 "z": 12
+            },
+            "0ef4faaf-ece7-4737-a90f-e3875f857c38": {
+                "size": {
+                    "width": 60,
+                    "height": 60
+                },
+                "position": {
+                    "x": 2020,
+                    "y": 1530
+                },
+                "z": 0,
+                "embeds": [],
+                "isassociatedwith": [
+                    "52335cdf-85a8-4dd3-a67d-7ae1e5a0bfaa"
+                ],
+                "isrelatedto": [
+                    "a480a2c1-75bf-4e0c-a6b0-a8274ef45d5d",
+                    "96a3f05c-1b47-4bca-b70f-b7012f14e164"
+                ]
+            },
+            "1874dbe3-ea1d-498e-af9d-838dfc9c1a12": {
+                "source": {
+                    "id": "0ef4faaf-ece7-4737-a90f-e3875f857c38"
+                },
+                "target": {
+                    "id": "52335cdf-85a8-4dd3-a67d-7ae1e5a0bfaa"
+                },
+                "z": 11
             }
         }
     }
