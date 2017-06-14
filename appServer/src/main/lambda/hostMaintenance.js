@@ -196,6 +196,8 @@ exports.checkForOverusedHosts = (event, context, callback) => {
                             h.id = s.current_host_id
                         INNER JOIN db_types d ON
                             h.db_type_id = d.id
+                WHERE
+                    h.pending_removal = FALSE
                 GROUP BY
                     h.id,
                     d.full_name
