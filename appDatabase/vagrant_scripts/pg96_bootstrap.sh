@@ -16,13 +16,13 @@ echo "deb http://apt.postgresql.org/pub/repos/apt/ trusty-pgdg main" > /etc/apt/
 wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add -
 apt-get -qq --yes update
 apt-get -qq --yes upgrade
-apt-get -qq --yes --force-yes install postgresql-9.3 postgresql-contrib-9.3
+apt-get -qq --yes --force-yes install postgresql-9.6 postgresql-contrib-9.6
 
-pg_dropcluster --stop 9.3 main
+pg_dropcluster --stop 9.6 main
 echo "listen_addresses = '*'" >> /etc/postgresql-common/createcluster.conf
 echo "max_connections = 500" >> /etc/postgresql-common/createcluster.conf
-pg_createcluster --start -e UTF-8 --locale en_US.UTF-8 9.3 main -- --auth-local=trust
-echo "host    all             all             10.1.0.0/16            md5" >> /etc/postgresql/9.3/main/pg_hba.conf
+pg_createcluster --start -e UTF-8 --locale en_US.UTF-8 9.6 main -- --auth-local=trust
+echo "host    all             all             10.1.0.0/16            md5" >> /etc/postgresql/9.6/main/pg_hba.conf
 service postgresql reload
 
 echo "alter user postgres with password 'password';" | psql -U postgres
