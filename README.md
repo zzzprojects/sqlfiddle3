@@ -173,6 +173,8 @@ Upload the docker images to ECR:
     docker push $ECR_URI:mysql56Host
     docker tag sqlfiddle:postgresql93Host $ECR_URI:postgresql93Host
     docker push $ECR_URI:postgresql93Host
+    docker tag sqlfiddle:postgresql96Host $ECR_URI:postgresql96Host
+    docker push $ECR_URI:postgresql96Host
 
 Pushing may take a long time. If it gets stalled out, use `docker-machine restart` between attempts
 
@@ -216,9 +218,11 @@ The site is now usable, but has no backend hosts available to execute queries (o
 Bring the docker-based database services up:
 
     ecs-cli compose --file aws/docker-compose-mysql56.yml \
-      --project-name mysql56 service up
+        --project-name mysql56 service up
     ecs-cli compose --file aws/docker-compose-postgresql93.yml \
-      --project-name postgresql93 service up
+        --project-name postgresql93 service up
+    ecs-cli compose --file aws/docker-compose-postgresql96.yml \
+        --project-name postgresql96 service up
 
 Bring any commercial database servers that are running on EC2 hosts (not docker containers):
 

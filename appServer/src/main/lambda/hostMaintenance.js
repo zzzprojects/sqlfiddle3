@@ -27,6 +27,14 @@ var getHostTemplate = (hostType, ipAddress, port, connection_meta) => {
             "admin_password": "password",
             connection_meta
         },
+        "ecscompose-postgresql96": {
+            "full_name": "PostgreSQL 9.6",
+            "jdbc_url_template": `jdbc:postgresql://${ipAddress}:${port}/#databaseName#`,
+            "default_database": "postgres",
+            "admin_username": "postgres",
+            "admin_password": "password",
+            connection_meta
+        },
         "oracle11g": {
             "full_name": "Oracle 11g R2",
             "jdbc_url_template": `jdbc:oracle:thin:@//${ipAddress}:${port}/xe`,
@@ -117,6 +125,12 @@ var scaleUpHost = (full_name) => {
             FunctionName: "addTask",
             Payload: JSON.stringify({
                 serviceName: "ecscompose-service-postgresql93"
+            })
+        },
+        "PostgreSQL 9.6" : {
+            FunctionName: "addTask",
+            Payload: JSON.stringify({
+                serviceName: "ecscompose-service-postgresql96"
             })
         }
     },

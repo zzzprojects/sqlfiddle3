@@ -16,6 +16,10 @@ services:
     build:
       context: ./postgresql93Host
     image: sqlfiddle:postgresql93Host
+  postgresql96Host:
+    build:
+      context: ./postgresql96Host
+    image: sqlfiddle:postgresql96Host
   mysql56Host:
     build:
       context: ./mysql56Host

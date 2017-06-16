@@ -9,6 +9,7 @@ COPY hosts (id, db_type_id, jdbc_url_template, default_database, admin_username,
 3	4	jdbc:oracle:thin:@//oracle11gHost:1521/xe	XE	system	password
 4	6	jdbc:jtds:sqlserver://sqlserver2014Host:1433/#databaseName#	master	sa	SQLServerPassword
 6	3	jdbc:jtds:sqlserver://sqlserver2014Host:1433/#databaseName#	master	sa	SQLServerPassword
+7	16	jdbc:postgresql://postgresql96Host:5432/#databaseName#	postgres	postgres	password
 \.
 
 
