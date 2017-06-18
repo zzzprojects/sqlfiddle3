@@ -40,7 +40,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
     appDatabase.vm.provision :shell, :inline => "echo 'access_key = #{ENV['AWS_ACCESS_KEY_ID']}' >> /vagrant/vagrant_scripts/.s3cfg"
     appDatabase.vm.provision :shell, :inline => "echo 'secret_key = #{ENV['AWS_SECRET_ACCESS_KEY']}' >> /vagrant/vagrant_scripts/.s3cfg"
     appDatabase.vm.provision :shell, :path => "vagrant_scripts/pg96_bootstrap.sh"
-    #appDatabase.vm.provision :shell, :path => "vagrant_scripts/s3_backup.sh"
+    appDatabase.vm.provision :shell, :inline => "S3_BUCKET=#{ENV['S3_BUCKET']} /bin/bash /vagrant/vagrant_scripts/s3_backup.sh"
   end
 
 

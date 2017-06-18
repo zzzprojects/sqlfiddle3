@@ -157,8 +157,6 @@ Use vagrant to create a dedicated EC2 instance to run the persisted PostgreSQL a
 
 This will also setup a daily full backup of the database to write to your S3 account (see appDatabase/vagrant_scripts/s3_backup.sh and s3cfg_template for details).
 
-If there is already a backup of the sqlfiddle database stored in your S3 account, this will also automatically restore that backup into this new instance.
-
 Create a new ECR repository to house your docker images ('sqlfiddle'):
 
     eval $(aws ecr get-login --region $REGION)
