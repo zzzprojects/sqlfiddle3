@@ -280,8 +280,10 @@ class Query {
         def set = [RESULTS: [ COLUMNS: [], DATA: [] ], SUCCEEDED:queryResult.succeeded(), STATEMENT: query]
 
         if (set.SUCCEEDED) {
-            set.RESULTS.COLUMNS = queryResult.result().columnNames
-            set.RESULTS.DATA = queryResult.result().results
+            if (queryResult.result() != null) {
+                set.RESULTS.COLUMNS = queryResult.result().columnNames
+                set.RESULTS.DATA = queryResult.result().results
+            }
         } else {
             def errorMessage = queryResult.cause().getMessage()
             if ((errorMessage =~ /ResultSet is from UPDATE\. No Data\./).find() || // MySQL when using SELECT ... INTO @var
