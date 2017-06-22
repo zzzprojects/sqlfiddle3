@@ -4,7 +4,7 @@ This version of the system is intended to make use of Docker for the different s
 
 It is also implemented with Vert.x in the application tier.
 
-###Prerequisites for local build:
+### Prerequisites for local build:
 
     Java 8+
     Maven 3.3+

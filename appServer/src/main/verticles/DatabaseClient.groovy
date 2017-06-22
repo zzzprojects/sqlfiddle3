@@ -1,4 +1,4 @@
-import io.vertx.groovy.ext.jdbc.JDBCClient
+import io.vertx.ext.jdbc.JDBCClient
 import io.vertx.core.impl.FutureImpl
 import java.util.regex.Pattern
 
