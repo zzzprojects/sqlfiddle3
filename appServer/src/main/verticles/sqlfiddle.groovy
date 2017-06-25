@@ -78,4 +78,4 @@ router.route(HttpMethod.GET, "/backend/loadContent/:dbtypeid/:shortcode/:queryid
 
 
 def server = vertx.createHttpServer()
-server.requestHandler(router.&accept).listen(8080)
+server.requestHandler(router.&accept).listen(8081)
