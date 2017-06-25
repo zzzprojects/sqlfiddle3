@@ -11,6 +11,7 @@
     <link rel="shortcut icon" href="favicon.ico" type="image/x-icon">
 
     <link rel="stylesheet" type="text/css" href="css/styles_min.css">
+    <link rel="stylesheet" type="text/css" href="css/about.css">
     <link rel="stylesheet" type="text/css" href="css/print_min.css" media="print" />
 
 
@@ -117,7 +118,7 @@
                     <div class="hero-unit">
                         <img class="pull-left" src="images/fiddle_transparent.png" title="A fiddle-head fern">
                         <div class="page-header pull-left">
-                            <h1 class="">About SQLFiddle.com</h1>
+                            <h1 class="">About SQL Fiddle</h1>
                         </div>
                         <p>
                             A tool for easy online testing and sharing of database problems and their solutions.
@@ -131,7 +132,7 @@
                     <hr>
                 </div>
 
-                <div class="span9 panel pull-left">
+                <div class="span12 panel pull-left">
                     <h2>What am I supposed to do here?</h2>
                         <p>
                             If you do not know SQL or basic database
@@ -159,19 +160,6 @@
                         query would look like in that environment.</span>  Using SQL Fiddle, you don't need to bother spinning up a
                         whole installation for your evaluation; just create your database and queries here!
                     </p>
-                </div>
-                <div class="span3 panel pull-right">
-                    <div class="thumbnail">
-                        <div class="image">
-                            <iframe width="270" height="180" src="http://www.youtube.com/embed/DDVOMRvyAS4?rel=0" frameborder="0" allowfullscreen></iframe>
-                        </div>
-                        <div class="caption">
-                            <h5>SQL Fiddle : SQL Online Practice Tool</h5>
-                            <p>
-                                <a href="http://allzhere.in/2013/03/12/sql-fiddle-runexecute-sql-online/" target="_blank"><span class="label">AllzHere</span></a> has made a nice <a href="http://youtu.be/DDVOMRvyAS4" target="_blank">instructional video</a> and <a href="http://allzhere.in/2013/03/12/sql-fiddle-runexecute-sql-online/" target="_blank">blog post</a> for getting started with SQL Fiddle.
-                            </p>
-                        </div>
-                    </div>
                 </div>
 
                 <a name="howWorks"></a>
@@ -215,12 +203,6 @@
                     <p>
                         MySQL only supports queries which read from the schema (selects, basically).  This is necessary due to some limitations in MySQL that make it impossible for
                         me to ensure a consistent schema while various people are fiddling with it.  The other database options allow the full range of queries that the back-end supports.
-                    </p>
-
-                    <p>
-                        Versions of various databases that are either older or newer than the current stable release for that product are hosted by <a href="http://douglastechnology.co.uk/">Jack Douglas</a> in his server
-                        environment.  This means that some of the schema building / query execution actions may be a bit slower for these options, as there is more network latency between
-                        my web server and his VMs.
                     </p>
 
                     <p>
@@ -312,6 +294,15 @@
 
                     <h2>Who built this site, and why?</h2>
                     <p>
+                        <a href="http://stackoverflow.com/users/808921/jake-feasel" style="float:right; padding: 20px">
+                            <img src="http://stackoverflow.com/users/flair/808921.png" width="208" height="58" alt="profile for Jake Feasel at Stack Overflow, Q&amp;A for professional and enthusiast programmers" title="profile for Jake Feasel at Stack Overflow, Q&amp;A for professional and enthusiast programmers">
+                        </a>
+
+                        <script type="text/javascript" src="https://platform.linkedin.com/badges/js/profile.js" async defer></script>
+                        <div class="LI-profile-badge" style="float:right;width:300px;clear:right"  data-version="v1" data-size="medium" data-locale="en_US" data-type="horizontal" data-theme="light" data-vanity="jake-feasel-3a984a100"><a class="LI-simple-link" href='https://www.linkedin.com/in/jake-feasel-3a984a100?trk=profile-badge'>Jake Feasel</a></div>
+
+                    </p>
+                    <p>
                         SQLFiddle.com was built by me, <a href="http://stackoverflow.com/users/808921/jake-feasel"><span class="label">Jake Feasel</span></a>,
                         a web developer originally from Anchorage, Alaska and now living in Vancouver, WA.  I started developing the site around the middle of January, 2012.
                     </p>
@@ -322,23 +313,17 @@
                         <a href="http://stackoverflow.com/search?q=user:808921+[sql]"><span class="label label-warning">SQL</span></a>.
                     </p>
                     <p>
-                        <a href="http://stackoverflow.com/users/808921/jake-feasel">
-                            <img src="http://stackoverflow.com/users/flair/808921.png" width="208" height="58" alt="profile for Jake Feasel at Stack Overflow, Q&amp;A for professional and enthusiast programmers" title="profile for Jake Feasel at Stack Overflow, Q&amp;A for professional and enthusiast programmers">
-                        </a>
-                    </p>
-                    <p>
                         I found <a href="http://jsfiddle.net"><span class="label label-info">JS Fiddle</span></a> to be a great tool for answering javascript / jQuery questions,
                         but I also found that there was nothing available that offered similar functionality for the SQL questions. So, that
                         was my inspiration to build this site.  Basically, I built this site as a tool for developers like me to be more
                         effective in assisting other developers.
                     </p>
                     <p>
-                        <a href="http://ramonroche.com/"><span class="label label-info">Ramon Roche</span></a> helped me to get the UI moved to Bootstrap, and just generally helped to make it look a lot better.
-                        This has been my first time using Bootstrap, and without his assistance getting started I'm sure it would have been a lot rougher.  Thanks Ramon!
+                        As of June 2017, I'm on my third major revision (<a href="https://github.com/jakefeasel/sqlfiddle3">sqlfiddle3</a>). The older versions are still on github, at <a href="https://github.com/jakefeasel/sqlfiddle2">sqlfiddle2</a> and the original <a href="https://github.com/jakefeasel/sqlfiddle">sqlfiddle</a>.
                     </p>
-
-
-
+                    <p>
+                        Feel free to connect with me on LinkedIn!
+                    </p>
                 </div>
 
 
@@ -351,21 +336,11 @@
                     <h2>How is the site paid for?</h2>
                     <p>
                         Originally, my costs for operating this site were very low - basically, I had a free ride on the cloud hosting environment purchased by my former employer, <a href="http://www.geonorth.com">GeoNorth</a>.
-                        However, as I moved on to <a href="http://www.forgerock.com">different employment</a>, I knew I would no longer have this luxury.  Fortunately, the site has had enough usage since it's initial rollout to
-                        gain a sponsor's interest.  So, thanks to the very good folks at <a href="http://www.sqlsentry.com">SQL Sentry</a>, I am able to cover the costs of running this site.
+                        However, as I moved on to <a href="http://www.forgerock.com">different employment</a>, I knew I would no longer have this luxury. At this point, the site is paid for out of my own pocket.
                     </p>
 
                     <p>
-                        Sponsorship aside, server memory is still tight and I would like to expand. If you would like to help me run this site, then you have several options to do so.
-                        First, you could visit SQL Sentry by clicking on the ad on the bottom of the main page, and try out their products.  Second, you can click on the <a href="http://flattr.com/thing/679503/SQL-Fiddle">Flattr link</a>
-                        at the top of the page and kick me a little micro-donation.  Flattr is a new service so I know a lot of people haven't started using it yet; if you're
-                        more comfortable with PayPal, and would like to help me out with running the site that way, I'd really love to have your support.  My <i>admin at sqlfiddle dot com</i> address
-                        is hooked up with PayPal, so please feel free to help me out that way.
-                    </p>
-
-                    <p>
-                        One of the biggest contributors I have for the site is <a href="http://douglastechnology.co.uk/">Jack Douglas</a>, from <a href="http://dba.stackexchange.com">dba.stackexchange.com</a>.  Jack has provided many of the
-                        VPS instances that I'm using to run the non-primary versions of various databases.  Thanks Jack!
+                        Until I get sponsorship revenue again, your contributions via Paypal really do help me keep this site going. I really appreciate every donation!
                     </p>
 
                 </div>
@@ -378,7 +353,7 @@
                 <div class="span12 panel pull-left">
                     <h2>Source Code</h2>
                     <p>
-                        If you are interested in the fine details of the code behind SQL Fiddle, it is all available on <a href="https://github.com/jakefeasel/sqlfiddle2"><span class="label label-info">github</span></a>
+                        If you are interested in the fine details of the code behind SQL Fiddle and exactly how it is deployed, it is all available on <a href="https://github.com/jakefeasel/sqlfiddle3"><span class="label label-info">github</span></a>
                     </p>
                 </div>
 
@@ -480,6 +455,14 @@
                             </tr>
                             <tr>
                                 <th>
+                                    <a href="https://www.varnish-cache.org/">Varnish</a> <span class="badge badge-info">backend</span>
+                                </th>
+                                <td>
+                                    Content-caching reverse proxy.
+                                </td>
+                            </tr>
+                            <tr>
+                                <th>
                                     <a href="http://vertx.io/">Vert.x</a> <span class="badge badge-info">backend</span>
                                 </th>
                                 <td>
@@ -545,7 +528,7 @@
             </div>
         </div>
     </div>
-    <script src="javascript/libs/jquery/jquery-1.11.1.min.js" type="text/javascript"></script>
+    <script src="node_modules/jquery/dist/jquery.min.js" type="text/javascript"></script>
     <script src="javascript/libs/bootstrap.min.js" type="text/javascript"></script>
 </body>
 </html>
