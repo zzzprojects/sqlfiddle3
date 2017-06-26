@@ -167,6 +167,8 @@ Upload the docker images to ECR:
 
     docker tag sqlfiddle:appServer $ECR_URI:appServer
     docker push $ECR_URI:appServer
+    docker tag sqlfiddle:varnish $ECR_URI:varnish
+    docker push $ECR_URI:varnish
     docker tag sqlfiddle:mysql56Host $ECR_URI:mysql56Host
     docker push $ECR_URI:mysql56Host
     docker tag sqlfiddle:postgresql93Host $ECR_URI:postgresql93Host
@@ -190,12 +192,12 @@ Start the cluster with two t2.medium container instances, spread between the sub
 Bring the appServer instances up:
 
     ecs-cli compose --file aws/docker-compose-appServer.yml \
-        --project-name appServer service up \
+        --project-name cachedAppServer service up \
         --target-group-arn $TARGET_GROUP_ARN \
-        --role ecsServiceRole --container-name appServer --container-port 8080
+        --role ecsServiceRole --container-name varnish --container-port 8080
 
     ecs-cli compose --file aws/docker-compose-appServer.yml \
-        --project-name appServer service scale 2
+        --project-name cachedAppServer service scale 2
 
 Get the DNS entry needed to access the cluster:
 

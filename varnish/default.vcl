@@ -1,8 +1,8 @@
 vcl 4.0;
 
 backend default {
-    .host = "127.0.0.1";
-    .port = "8081";
+    .host = "${VARNISH_BACKEND_HOST}";
+    .port = "${VARNISH_BACKEND_PORT}";
 }
 
 sub vcl_recv {
