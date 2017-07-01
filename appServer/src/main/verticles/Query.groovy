@@ -186,9 +186,19 @@ class Query {
                 this.schemaDef.getBatchSeparator())
             def hasExecutionPlan = this.schemaDef.getExecutionPlanPrefix().size() > 0 || this.schemaDef.getExecutionPlanSuffix().size() > 0
 
-            querySerially(hostConnection, queries, hasExecutionPlan, { resultSets ->
-                hostConnection.rollback(fn(resultSets))
-            })
+            if (this.schemaDef.getSimpleName() == "PostgreSQL") {
+                hostConnection.query("INSERT INTO DEFERRED_" + this.schemaDef.getDatabaseName() + " VALUES (2)", { queryResult ->
+                    querySerially(hostConnection, queries, hasExecutionPlan, { resultSets ->
+                        hostConnection.rollback(fn(resultSets))
+                    })
+                })
+            } else {
+                querySerially(hostConnection, queries, hasExecutionPlan, { resultSets ->
+                    hostConnection.rollback(fn(resultSets))
+                })
+            }
+
+
         })
     }
 
@@ -200,6 +210,27 @@ class Query {
                 fn(resultSets)
             } else {
                 def query = queryQueue.get(0)
+
+                def performQuery = { finalExecutionPlanResults ->
+                    long startTime = (new Date()).toTimestamp().getTime()
+                    connection.query(query, { queryResult ->
+                        def set = formatQueryResult(queryResult, query)
+                        set.EXECUTIONTIME = ((new Date()).toTimestamp().getTime() - startTime)
+
+                        if (finalExecutionPlanResults) {
+                            set.EXECUTIONPLANRAW = finalExecutionPlanResults.raw
+                            set.EXECUTIONPLAN = finalExecutionPlanResults.processed
+                        }
+
+                        resultSets.add(set)
+                        if (set.SUCCEEDED) {
+                            queryHandler(queryQueue)
+                        } else {
+                            fn(resultSets)
+                        }
+                    })
+                }
+
                 queryQueue.remove(0)
 
                 if (includeExecutionPlan) {
@@ -211,6 +242,10 @@ class Query {
                     executionPlanSQL = executionPlanSQL.replaceAll("#schema_short_code#", this.schemaDef.getShortCode())
                     executionPlanSQL = executionPlanSQL.replaceAll("#query_id#", this.query_id.toString())
                     def executionPlanStatements = DatabaseClient.parseStatementGroups(executionPlanSQL, ";", this.schemaDef.getBatchSeparator())
+
+                    if (this.schemaDef.getSimpleName() == "PostgreSQL") {
+                        executionPlanStatements = ["SAVEPOINT sp"] + executionPlanStatements
+                    }
 
                     // call this same function but with "false" for "includeExecutionPlan"
                     querySerially(connection, executionPlanStatements, false, { executionPlanResultSets ->
@@ -240,35 +275,16 @@ class Query {
 
                         }
 
-                        long startTime = (new Date()).toTimestamp().getTime()
-                        connection.query(query, { queryResult ->
-                            def set = formatQueryResult(queryResult, query)
-                            set.EXECUTIONTIME = ((new Date()).toTimestamp().getTime() - startTime)
-                            set.EXECUTIONPLANRAW = finalExecutionPlanResults.raw
-                            set.EXECUTIONPLAN = finalExecutionPlanResults.processed
-
-                            resultSets.add(set)
-                            if (set.SUCCEEDED) {
-                                queryHandler(queryQueue)
-                            } else {
-                                fn(resultSets)
-                            }
-                        })
-                    })
-                } else {
-
-                    // TODO: refactor so share with above logic
-                    long startTime = (new Date()).toTimestamp().getTime()
-                    connection.query(query, { queryResult ->
-                        def set = formatQueryResult(queryResult, query)
-                        set.EXECUTIONTIME = ((new Date()).toTimestamp().getTime() - startTime)
-                        resultSets.add(set)
-                        if (set.SUCCEEDED) {
-                            queryHandler(queryQueue)
+                        if (this.schemaDef.getSimpleName() == "PostgreSQL") {
+                            connection.query("ROLLBACK TO sp", {
+                                performQuery(finalExecutionPlanResults)
+                            })
                         } else {
-                            fn(resultSets)
+                            performQuery(finalExecutionPlanResults)
                         }
                     })
+                } else {
+                    performQuery(null)
                 }
 
             }
@@ -294,9 +310,6 @@ class Query {
                 (errorMessage =~ /ORA-00900: invalid SQL statement/).find() // Oracle again :(
                 ) {
                 set.SUCCEEDED = true
-            } else if ((errorMessage =~ /current transaction is aborted, commands ignored until end of transaction block$/).find()) {
-                //throw new PostgreSQLException(statement)
-                set.ERRORMESSAGE = errorMessage
             } else if ((errorMessage =~ /insert or update on table "deferred_.*" violates foreign key constraint "deferred_.*_ref"/).find()) {
                 set.ERRORMESSAGE = "Explicit commits are not allowed within the query panel."
             } else if ((errorMessage =~ /Cannot execute statement in a READ ONLY transaction./).find() ||

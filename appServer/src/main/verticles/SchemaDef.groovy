@@ -59,6 +59,10 @@ class SchemaDef {
         return short_code
     }
 
+    String getSimpleName() {
+        return simple_name
+    }
+
     Integer getCurrentHostId() {
         return current_host_id
     }
