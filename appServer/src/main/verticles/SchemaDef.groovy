@@ -310,45 +310,34 @@ class SchemaDef {
                     this.executeScriptTemplate(adminHostConnection,
                         host.setup_script_template,
                         host.batch_separator,
+                        // execute the user's ddl within this new host...
                         {
+                            this.executeDDL(adminHostConnection, host, successHandler, errorHandler)
+                        },
+                        // deal with a failure to create the host...
+                        {
+                            // if we have trouble setting up a new database, it's likely due to a conflict with an existing one
+                            // therefore, try to delete it.
+                            this.dropDatabase(host, adminHostConnection, {
+                                // try again after having dropped the database
+                                this.executeScriptTemplate(adminHostConnection,
+                                    host.setup_script_template,
+                                    host.batch_separator,
+                                    {
+                                        this.executeDDL(adminHostConnection, host, successHandler, errorHandler)
+                                    },
+                                    { errorMessage ->
+                                        // give up if we are still unable to build the database
+                                        this.dropDatabase(host, adminHostConnection, {
+                                            errorHandler(errorMessage)
+                                        })
+                                    }
+                                )
 
-                        // get a connection to the new, blank database as a non-admin user...
-                        host.getUserHostConnection(this.vertx, this.getDatabaseName(),
-                            { hostConnection ->
-                                // timeout queries in case someone is trying to run something crazy
-                                // commented-out because it doesn't seem to work...?
-                                //hostConnection.setQueryTimeout((int)10)
+                            })
 
-                                def statements = DatabaseClient.parseStatementGroups(this.ddl, this.statement_separator, host.batch_separator)
-
-                                DatabaseClient.executeSerially(hostConnection, statements, {
-                                    adminHostConnection.close({
-                                        successHandler(host, hostConnection)
-                                    })
-                                },
-                                { errorMessage ->
-                                    // something went wrong - probably bad ddl
-                                    // close the non-admin host connection...
-                                    hostConnection.close({
-                                        // remove the database from the host...
-                                        this.executeScriptTemplate(adminHostConnection,
-                                            host.drop_script_template,
-                                            host.batch_separator,
-                                            {
-                                                adminHostConnection.close({
-                                                    errorHandler(errorMessage)
-                                                })
-                                            },
-                                            {
-                                                // somehow failed to drop the database?
-                                                errorHandler(errorMessage)
-                                            }
-                                        )
-                                    })
-
-                                })
-                            }, errorHandler) // end host connection
-                        }, errorHandler) // end setup of host database
+                        }
+                    ) // end setup of host database
                     }, errorHandler) // end admin connection
                 }, {
                     errorHandler("No host of this type available to create schema. Try using a different database version.")
@@ -356,6 +345,40 @@ class SchemaDef {
         ) // end find available host
 
     } // end buildRunningDatabase
+
+    def executeDDL (adminHostConnection, host, successHandler, errorHandler) {
+        // get a connection to the new, blank database as a non-admin user...
+        host.getUserHostConnection(this.vertx, this.getDatabaseName(), { hostConnection ->
+            // timeout queries in case someone is trying to run something crazy
+            // commented-out because it doesn't seem to work...?
+            //hostConnection.setQueryTimeout((int)10)
+
+            def statements = DatabaseClient.parseStatementGroups(this.ddl, this.statement_separator, host.batch_separator)
+
+            DatabaseClient.executeSerially(hostConnection, statements, {
+                adminHostConnection.close({
+                    successHandler(host, hostConnection)
+                })
+            },
+            { errorMessage ->
+                // something went wrong - probably bad ddl
+                // close the non-admin host connection...
+                hostConnection.close({
+                    this.dropDatabase(host, adminHostConnection, errorHandler)
+                })
+            })
+        }, errorHandler) // end host connection
+    }
+
+    def dropDatabase(host, hostConnection, handler) {
+        // remove the database from the host...
+        this.executeScriptTemplate(hostConnection,
+            host.drop_script_template,
+            host.batch_separator,
+            handler,
+            handler
+        )
+    }
 
 
     def updateCurrentHost(current_host_id, fn) {
