@@ -5,13 +5,12 @@ define ([
         "Handlebars",
         "utils/fiddleEditor",
         "utils/renderTerminator",
-        'XPlans/oracle/loadswf',
         'XPlans/mssql',
         "text!fiddle_backbone/templates/queryTabularOutput.html",
         "text!fiddle_backbone/templates/queryPlaintextOutput.html",
         "text!fiddle_backbone/templates/queryMarkdownOutput.html"
     ],
-    function ($,_,Backbone,Handlebars,fiddleEditor,renderTerminator,loadswf,QP,tabTemplate,plainTemplate,mdTemplate) {
+    function ($,_,Backbone,Handlebars,fiddleEditor,renderTerminator,QP,tabTemplate,plainTemplate,mdTemplate) {
 
 
     var QueryView = Backbone.View.extend({
@@ -90,14 +89,6 @@ define ([
             this.options.output_el.html(
                 this.compiledOutputTemplate[this.outputType](inspectedData)
             );
-
-            $("script.oracle_xplan_xml").each(function () {
-
-                $(this).siblings("div.oracle_xplan")
-                    .html(
-                        loadswf($(this).text())
-                        );
-            });
 
 
             this.options.output_el.find("a.executionPlanLink").click(function (e) {
