@@ -193,6 +193,10 @@ class Query {
                     })
                 })
             } else {
+                if (this.schemaDef.getSimpleName() == "MySQL") {
+                    // mysql handles transactions poorly; better to just make the whole thing readonly
+                    hostConnection.unwrap().setReadOnly(true)
+                }
                 querySerially(hostConnection, queries, hasExecutionPlan, { resultSets ->
                     hostConnection.rollback(fn(resultSets))
                 })
@@ -313,7 +317,7 @@ class Query {
             } else if ((errorMessage =~ /insert or update on table "deferred_.*" violates foreign key constraint "deferred_.*_ref"/).find()) {
                 set.ERRORMESSAGE = "Explicit commits are not allowed within the query panel."
             } else if ((errorMessage =~ /Cannot execute statement in a READ ONLY transaction./).find() ||
-                    (errorMessage =~ /Can not issue data manipulation statements with executeQuery/).find()) {
+                    (errorMessage =~ /Connection is read-only. Queries leading to data modification are not allowed/).find()) {
                 set.ERRORMESSAGE = "DDL and DML statements are not allowed in the query panel for MySQL; only SELECT statements are allowed. Put DDL and DML in the schema panel."
             } else {
                 set.ERRORMESSAGE = errorMessage
