@@ -4,12 +4,14 @@ services:
     image: "$ECR_URI:appServer"
     extra_hosts:
      - "appDatabase:$APP_DATABASE_IP"
+    mem_reservation: 1024m
   varnish:
     image: "$ECR_URI:varnish"
     links:
     - "appServer"
     ports:
     - "0:8080"
+    mem_reservation: 256m
     environment:
     - VARNISH_BACKEND_HOST=appServer
     - VARNISH_BACKEND_PORT=8080
