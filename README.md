@@ -192,12 +192,12 @@ Start the cluster with two t2.medium container instances, spread between the sub
 Bring the appServer instances up:
 
     ecs-cli compose --file aws/docker-compose-appServer.yml \
-        --project-name cachedAppServer service up \
+        --project-name appServer service up \
         --target-group-arn $TARGET_GROUP_ARN \
         --role ecsServiceRole --container-name varnish --container-port 8080
 
     ecs-cli compose --file aws/docker-compose-appServer.yml \
-        --project-name cachedAppServer service scale 2
+        --project-name appServer service scale 2
 
 Get the DNS entry needed to access the cluster:
 
