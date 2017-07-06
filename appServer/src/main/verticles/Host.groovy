@@ -81,9 +81,9 @@ class Host {
                     user: this.admin_username,
                     password: this.admin_password,
                     initial_pool_size: 1,
-                    min_pool_size: 1,
-                    max_pool_size: 1,
-                    max_idle_time: 1
+                    min_pool_size: 0,
+                    max_pool_size: 2,
+                    max_idle_time: 2
                 ],
                 successHandler,
                 errorHandler
@@ -106,9 +106,9 @@ class Host {
                     user: "user_" + databaseName,
                     password: databaseName,
                     initial_pool_size: 1,
-                    min_pool_size: 1,
-                    max_pool_size: 1,
-                    max_idle_time: 1
+                    min_pool_size: 0,
+                    max_pool_size: 2,
+                    max_idle_time: 2
                 ],
                 successHandler,
                 errorHandler
