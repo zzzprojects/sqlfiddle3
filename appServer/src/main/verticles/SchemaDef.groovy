@@ -193,7 +193,7 @@ class SchemaDef {
             WHERE
                 s.db_type_id = ? AND
                 s.short_code LIKE ?
-            """, [this.db_type_id, this.short_code + "%"], { possibleConflicts ->
+            """, [this.db_type_id, short_code + "%"], { possibleConflicts ->
                 connection.close()
                 def foundUniqueCode = false
                 while (!foundUniqueCode) {
