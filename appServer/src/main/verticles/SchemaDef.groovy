@@ -368,7 +368,9 @@ class SchemaDef {
                 // something went wrong - probably bad ddl
                 // close the non-admin host connection...
                 hostConnection.close({
-                    this.dropDatabase(host, adminHostConnection, errorHandler)
+                    this.dropDatabase(host, adminHostConnection, {
+                        errorHandler(errorMessage)
+                    })
                 })
             })
         }, errorHandler) // end host connection
