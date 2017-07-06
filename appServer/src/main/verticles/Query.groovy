@@ -1,3 +1,11 @@
+import javax.xml.transform.TransformerFactory
+import javax.xml.transform.stream.StreamResult
+import javax.xml.transform.stream.StreamSource
+import java.nio.charset.Charset
+import java.sql.Connection
+import java.sql.SQLException
+
+
 class Query {
     private vertx
     private String sql
@@ -206,6 +214,36 @@ class Query {
         })
     }
 
+    private getExecutionPlanResults (connection, queries) {
+        Connection nativeConn = (Connection) connection.unwrap()
+        def results = []
+        queries.each({
+            try {
+                def rs = nativeConn.createStatement().executeQuery(it)
+                def set = [RESULTS: [ COLUMNS: [], DATA: [] ], SUCCEEDED:true, STATEMENT: it]
+                def addResultSetRow = {
+                    def row = []
+                    (1..rs.getMetaData().columnCount).each({ columnId ->
+                        row.add(rs.getString((int) columnId))
+                    })
+                    set.RESULTS.DATA.add(row)
+                }
+
+                (1..rs.getMetaData().columnCount).each({
+                    set.RESULTS.COLUMNS.add(rs.getMetaData().getColumnName(it))
+                })
+                while (rs.next()) {
+                    addResultSetRow()
+                }
+
+                results.add(set)
+            } catch (SQLException se) {
+                // probably didn't return any results
+            }
+        })
+        return results
+    }
+
     private querySerially(connection, queries, includeExecutionPlan, fn) {
         def queryHandler
         def resultSets = []
@@ -238,55 +276,50 @@ class Query {
                 queryQueue.remove(0)
 
                 if (includeExecutionPlan) {
-                    def executionPlan = null
                     def finalExecutionPlanResults = [processed : null, raw : null]
 
                     // execution plan able to be computed, therefore get it before we run the main query
                     def executionPlanSQL = this.schemaDef.getExecutionPlanPrefix() + query + this.schemaDef.getExecutionPlanSuffix()
                     executionPlanSQL = executionPlanSQL.replaceAll("#schema_short_code#", this.schemaDef.getShortCode())
                     executionPlanSQL = executionPlanSQL.replaceAll("#query_id#", this.query_id.toString())
-                    def executionPlanStatements = DatabaseClient.parseStatementGroups(executionPlanSQL, ";", this.schemaDef.getBatchSeparator())
+                    def executionPlanStatements = DatabaseClient.parseStatementGroups(executionPlanSQL, this.schemaDef.getBatchSeparator(), this.schemaDef.getBatchSeparator())
 
                     if (this.schemaDef.getSimpleName() == "PostgreSQL") {
                         executionPlanStatements = ["SAVEPOINT sp"] + executionPlanStatements
                     }
 
-                    // call this same function but with "false" for "includeExecutionPlan"
-                    querySerially(connection, executionPlanStatements, false, { executionPlanResultSets ->
-                        executionPlan = executionPlanResultSets[executionPlanResultSets.size()-1] // the last record is the one we want here
+                    def executionPlanResultSets = this.getExecutionPlanResults(connection, executionPlanStatements)
+                    if (executionPlanResultSets.size()) {
+                        def executionPlan = executionPlanResultSets[executionPlanResultSets.size()-1] // the last record is the one we want here
                         if (executionPlan.SUCCEEDED && executionPlan.RESULTS.COLUMNS.size() > 0) {
                             finalExecutionPlanResults.processed = executionPlan.RESULTS
                             finalExecutionPlanResults.raw = executionPlan.RESULTS
 
-                            /*
-                                TODO: restore this xslt logic from sqlfiddle2
+                            if (this.schemaDef.getExecutionPlanXSLT()?.size() &&
+                                executionPlan.RESULTS.COLUMNS?.size() == 1 &&
+                                executionPlan.RESULTS.DATA?.size() == 1) {
+                                try {
+                                    def factory = TransformerFactory.newInstance()
+                                    def transformer = factory.newTransformer(new StreamSource(new StringReader(this.schemaDef.getExecutionPlanXSLT())))
+                                    def outputStream = new ByteArrayOutputStream()
+                                    transformer.transform(new StreamSource(new StringReader(finalExecutionPlanResults.raw.DATA[0][0])), new StreamResult(outputStream))
 
-                                if (db_type.execution_plan_xslt?.size() &&
-                                    executionPlan.RESULTS.COLUMNS?.size() == 1 &&
-                                    executionPlan.RESULTS.DATA?.size() == 1) {
-                                    try {
-                                        def factory = TransformerFactory.newInstance()
-                                        def transformer = factory.newTransformer(new StreamSource(new StringReader(db_type.execution_plan_xslt)))
-                                        def outputStream = new ByteArrayOutputStream()
-                                        transformer.transform(new StreamSource(new StringReader(executionPlanResults.raw.DATA[0][0])), new StreamResult(outputStream))
-
-                                        executionPlanResults.processed.DATA[0][0] = new String(outputStream.toByteArray(), Charset.defaultCharset())
-                                    } catch (e) {
-                                        // unable to parse the execution plan results
-                                    }
+                                    finalExecutionPlanResults.processed.DATA[0][0] = new String(outputStream.toByteArray(), Charset.defaultCharset())
+                                } catch (e) {
+                                    // unable to parse the execution plan results
                                 }
-                         */
-
+                            }
                         }
+                    }
 
-                        if (this.schemaDef.getSimpleName() == "PostgreSQL") {
-                            connection.query("ROLLBACK TO sp", {
-                                performQuery(finalExecutionPlanResults)
-                            })
-                        } else {
+                    if (this.schemaDef.getSimpleName() == "PostgreSQL") {
+                        connection.query("ROLLBACK TO sp", {
                             performQuery(finalExecutionPlanResults)
-                        }
-                    })
+                        })
+                    } else {
+                        performQuery(finalExecutionPlanResults)
+                    }
+
                 } else {
                     performQuery(null)
                 }

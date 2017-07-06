@@ -1,5 +1,3 @@
-import io.vertx.core.json.JsonObject
-
 class SchemaDef {
     private vertx
     private Integer schema_def_id
@@ -14,6 +12,7 @@ class SchemaDef {
     private String context
     private String execution_plan_prefix
     private String execution_plan_suffix
+    private String execution_plan_xslt
     private Integer current_host_id
 
     SchemaDef(vertx) {
@@ -79,6 +78,10 @@ class SchemaDef {
         return execution_plan_suffix?:""
     }
 
+    String getExecutionPlanXSLT() {
+        return execution_plan_xslt?:""
+    }
+
     private readFromDatabase(fn) {
         DatabaseClient.singleRead(this.vertx, """
             SELECT
@@ -92,7 +95,8 @@ class SchemaDef {
                 d.context,
                 d.batch_separator,
                 d.execution_plan_prefix,
-                d.execution_plan_suffix
+                d.execution_plan_suffix,
+                d.execution_plan_xslt
             FROM
                 db_types d
                     INNER JOIN schema_defs s ON
@@ -115,6 +119,7 @@ class SchemaDef {
                     this.batch_separator = schema_def.batch_separator
                     this.execution_plan_prefix = schema_def.execution_plan_prefix
                     this.execution_plan_suffix = schema_def.execution_plan_suffix
+                    this.execution_plan_xslt = schema_def.execution_plan_xslt
                     fn(true)
                 } else {
                     fn(false)
@@ -169,8 +174,7 @@ class SchemaDef {
                         fn([
                             _id: this.getDatabaseName(),
                             short_code: this.short_code,
-                            schema_structure: null //dbDetails.structure_json != null ?
-                                //new JsonObject(dbDetails.structure_json) : null
+                            schema_structure: null
                         ])
                     } else {
                         this.context = dbDetails.context
