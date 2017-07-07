@@ -159,7 +159,7 @@ This will also setup a daily full backup of the database to write to your S3 acc
 
 Create a new ECR repository to house your docker images ('sqlfiddle'):
 
-    eval $(aws ecr get-login --region $REGION)
+    eval $(aws ecr get-login --region $REGION --no-include-email)
     export ECR_URI=`aws ecr create-repository --repository-name sqlfiddle \
         --query repository.repositoryUri --output text`
 
