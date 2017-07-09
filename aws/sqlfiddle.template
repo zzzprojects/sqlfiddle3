@@ -834,6 +834,102 @@
                     "id": "0ef4faaf-ece7-4737-a90f-e3875f857c38"
                 }
             }
+        },
+        "MARKOLDESTFORREMOVAL": {
+            "Type": "AWS::Lambda::Function",
+            "Properties": {
+                "Code": {
+                    "S3Bucket": "sqlfiddle3",
+                    "S3Key": "sqlfiddle-lambda.zip"
+                },
+                "Environment": {
+                    "Variables": {
+                        "postgresHost": {
+                            "Ref": "APPDATABASEIP"
+                        },
+                        "postgresUser": "postgres",
+                        "postgresPassword": "password",
+                        "MAX_SCHEMAS_PER_HOST": "100"
+                    }
+                },
+                "FunctionName": "markOldestForRemoval",
+                "Handler": "hostMaintenance.markOldestForRemoval",
+                "Runtime": "nodejs6.10",
+                "Timeout": 10,
+                "Role": {
+                    "Fn::GetAtt": [
+                        "HOSTMAINTENANCEROLE",
+                        "Arn"
+                    ]
+                },
+                "VpcConfig": {
+                    "SecurityGroupIds": [
+                        {
+                            "Ref": "SECGROUP"
+                        }
+                    ],
+                    "SubnetIds": [
+                        {
+                            "Ref": "PRIVATESUB"
+                        }
+                    ]
+                }
+            },
+            "Metadata": {
+                "AWS::CloudFormation::Designer": {
+                    "id": "6371dfc1-9122-415a-a3c3-0b1f2e7901a0"
+                }
+            }
+        },
+        "MARKOLDESTFORREMOVALPERMISSION": {
+            "Type": "AWS::Lambda::Permission",
+            "Properties": {
+                "Action": "lambda:InvokeFunction",
+                "FunctionName": {
+                    "Ref": "MARKOLDESTFORREMOVAL"
+                },
+                "Principal": "events.amazonaws.com",
+                "SourceArn": {
+                    "Fn::GetAtt": [
+                        "MARKOLDESTFORREMOVALEVENT",
+                        "Arn"
+                    ]
+                }
+            },
+            "Metadata": {
+                "AWS::CloudFormation::Designer": {
+                    "id": "357393ab-9702-497d-b927-2466b80f889b"
+                }
+            }
+        },
+        "MARKOLDESTFORREMOVALEVENT": {
+            "Type": "AWS::Events::Rule",
+            "Properties": {
+                "Name": "markOldestForRemoval",
+                "ScheduleExpression": "rate(5 hours)",
+                "RoleArn": {
+                    "Fn::GetAtt": [
+                        "HOSTMAINTENANCEROLE",
+                        "Arn"
+                    ]
+                },
+                "Targets": [
+                    {
+                        "Arn": {
+                            "Fn::GetAtt": [
+                                "MARKOLDESTFORREMOVAL",
+                                "Arn"
+                            ]
+                        },
+                        "Id": "LambdaFunc"
+                    }
+                ]
+            },
+            "Metadata": {
+                "AWS::CloudFormation::Designer": {
+                    "id": "01beea7e-a8d1-42b2-a4b7-7458cc62459f"
+                }
+            }
         }
     },
     "Metadata": {
@@ -913,6 +1009,7 @@
                 "z": 2,
                 "parent": "46544b0b-c9cb-45c8-a60e-35b68f673b43",
                 "embeds": [
+                    "6371dfc1-9122-415a-a3c3-0b1f2e7901a0",
                     "ca662395-2c32-4de3-99ec-b00c585586d4",
                     "52335cdf-85a8-4dd3-a67d-7ae1e5a0bfaa"
                 ]
@@ -1196,7 +1293,9 @@
                 "embeds": [],
                 "isrelatedto": [
                     "0250e9ef-924e-4fa9-9dc6-6e1c9708c558",
-                    "3863545d-5aaf-435c-951f-d38805f38ce0"
+                    "3863545d-5aaf-435c-951f-d38805f38ce0",
+                    "846cac16-c276-48c6-93ef-deec64df4ae3",
+                    "94e6710d-f321-4d91-9cd5-2b6483fe9b3a"
                 ]
             },
             "320716f5-e905-4dc4-bdf2-75c0d54916ca": {
@@ -1521,6 +1620,58 @@
                     "id": "52335cdf-85a8-4dd3-a67d-7ae1e5a0bfaa"
                 },
                 "z": 11
+            },
+            "6371dfc1-9122-415a-a3c3-0b1f2e7901a0": {
+                "size": {
+                    "width": 60,
+                    "height": 60
+                },
+                "position": {
+                    "x": 1410,
+                    "y": 1530
+                },
+                "z": 3,
+                "parent": "846cac16-c276-48c6-93ef-deec64df4ae3",
+                "embeds": [],
+                "isrelatedto": [
+                    "0250e9ef-924e-4fa9-9dc6-6e1c9708c558",
+                    "94e6710d-f321-4d91-9cd5-2b6483fe9b3a",
+                    "846cac16-c276-48c6-93ef-deec64df4ae3"
+                ]
+            },
+            "357393ab-9702-497d-b927-2466b80f889b": {
+                "size": {
+                    "width": 60,
+                    "height": 60
+                },
+                "position": {
+                    "x": 2190,
+                    "y": 1530
+                },
+                "z": 0,
+                "embeds": [],
+                "isassociatedwith": [
+                    "6371dfc1-9122-415a-a3c3-0b1f2e7901a0"
+                ],
+                "isrelatedto": [
+                    "01beea7e-a8d1-42b2-a4b7-7458cc62459f"
+                ]
+            },
+            "01beea7e-a8d1-42b2-a4b7-7458cc62459f": {
+                "size": {
+                    "width": 60,
+                    "height": 60
+                },
+                "position": {
+                    "x": 2100,
+                    "y": 1530
+                },
+                "z": 0,
+                "embeds": [],
+                "isrelatedto": [
+                    "0250e9ef-924e-4fa9-9dc6-6e1c9708c558",
+                    "6371dfc1-9122-415a-a3c3-0b1f2e7901a0"
+                ]
             }
         }
     }

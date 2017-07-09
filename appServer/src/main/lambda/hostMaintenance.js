@@ -189,10 +189,62 @@ var deprovisionHostsPendingRemoval = (client) =>
         ))
     );
 
+var beginRemovalForEach = (client, queryResults) =>
+    Q.all(
+        queryResults.rows.map((host) =>
+            client.query({
+                text: `
+                    UPDATE
+                        hosts
+                    SET
+                        pending_removal = TRUE
+                    WHERE
+                        id = $1
+                `,
+                values: [
+                    host.host_id
+                ]
+            }).then(() =>
+                scaleUpHost(host.full_name)
+            )
+        )
+    );
+
+exports.markOldestForRemoval = (event, context, callback) => {
+    var pg = require('pg'),
+        // variables provided from lambda environment
+        client = new pg.Client(postgresConnectionConfig);
+
+    client.connect(function (err) {
+        client.query({ text: `
+                SELECT
+                    min(h.id) as host_id,
+                    (
+                        SELECT
+                            d.full_name
+                        FROM
+                            db_types d
+                                INNER JOIN hosts h2 ON
+                                    d.id = h2.db_type_id
+                        WHERE
+                            h2.id = min(h.id)
+                    ) as full_name
+                FROM
+                    hosts h
+            `
+        })
+        .then((queryResults) =>
+            beginRemovalForEach(client, queryResults).then((scaleResults) => {
+                client.end();
+                return callback(null, scaleResults);
+            }, (error) => callback(error))
+        )
+    });
+}
+
 /**
   Expected to be called on via a scheduled CloudWatch task
 */
-
 exports.checkForOverusedHosts = (event, context, callback) => {
     var pg = require('pg'),
         // variables provided from lambda environment
@@ -221,29 +273,10 @@ exports.checkForOverusedHosts = (event, context, callback) => {
             values: [
                 process.env.MAX_SCHEMAS_PER_HOST
             ]
-        }).then((result) =>
-            Q.all(
-                result.rows.map((host) =>
-                    client.query({
-                        text: `
-                            UPDATE
-                                hosts
-                            SET
-                                pending_removal = TRUE
-                            WHERE
-                                id = $1
-                        `,
-                        values: [
-                            host.host_id
-                        ]
-                    }).then(() =>
-                        scaleUpHost(host.full_name)
-                    )
-                )
-            )
-            .then((results) => {
+        }).then((queryResults) =>
+            beginRemovalForEach(client, queryResults).then((scaleResults) => {
                 client.end();
-                return callback(null, results);
+                return callback(null, scaleResults);
             }, (error) => callback(error))
         );
     });
