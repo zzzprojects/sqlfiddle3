@@ -22,6 +22,9 @@ router.post("/backend/createSchema").handler({ routingContext ->
 
 router.post("/backend/executeQuery").handler({ routingContext ->
     (new Query(vertx, routingContext.getBodyAsJson())).execute({ response ->
+        if (response.error) {
+            response.sets = [[ERRORMESSAGE:response.error]]
+        }
         RESTUtils.writeJSONResponse(routingContext, response)
     })
 })
@@ -67,7 +70,11 @@ router.route(HttpMethod.GET, "/backend/loadContent/:dbtypeid/:shortcode/:queryid
             RESTUtils.write404Response(routingContext)
         } else {
             query.execute({ resultSets ->
-                response.sets = resultSets.sets
+                if (resultSets.error) {
+                    response.sets = [[ERRORMESSAGE:resultSets.error]]
+                } else {
+                    response.sets = resultSets.sets
+                }
                 RESTUtils.writeJSONResponse(routingContext, response)
             })
         }
