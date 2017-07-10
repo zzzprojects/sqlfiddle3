@@ -389,7 +389,7 @@ CREATE INDEX query_md5s ON queries USING btree (md5, schema_def_id);
 -- Name: schema_md5s; Type: INDEX; Schema: public; Owner: postgres; Tablespace:
 --
 
-CREATE INDEX schema_md5s ON schema_defs USING btree (md5, db_type_id);
+CREATE UNIQUE INDEX schema_md5s_unique ON schema_defs USING btree (md5, db_type_id);
 
 
 --
