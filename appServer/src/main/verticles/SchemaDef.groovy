@@ -1,3 +1,8 @@
+import java.sql.Connection
+import java.sql.ResultSet
+import groovy.json.JsonSlurper
+import groovy.json.JsonBuilder
+
 class SchemaDef {
     private vertx
     private Integer schema_def_id
@@ -14,6 +19,7 @@ class SchemaDef {
     private String execution_plan_suffix
     private String execution_plan_xslt
     private Integer current_host_id
+    private structure
 
     SchemaDef(vertx) {
         this.vertx = vertx
@@ -32,7 +38,7 @@ class SchemaDef {
                     "short_code": this.short_code,
                     "ddl": this.ddl,
                     "schema_statement_separator": this.statement_separator,
-                    "schema_structure": null,
+                    "schema_structure": this.structure,
                     "full_name": this.full_name
                 ])
             } else {
@@ -90,6 +96,7 @@ class SchemaDef {
                 s.md5,
                 s.statement_separator,
                 s.current_host_id,
+                s.structure_json,
                 d.simple_name,
                 d.full_name,
                 d.context,
@@ -120,6 +127,8 @@ class SchemaDef {
                     this.execution_plan_prefix = schema_def.execution_plan_prefix
                     this.execution_plan_suffix = schema_def.execution_plan_suffix
                     this.execution_plan_xslt = schema_def.execution_plan_xslt
+                    this.structure = schema_def.structure_json != null ?
+                        (new JsonSlurper()).parseText(schema_def.structure_json) : null
                     fn(true)
                 } else {
                     fn(false)
@@ -169,12 +178,15 @@ class SchemaDef {
                         "error": "Unable to find database type"
                     ])
                 } else {
+                    this.simple_name = dbDetails.simple_name
+                    this.full_name = dbDetails.full_name
                     if (dbDetails.short_code != null) {
                         this.short_code = dbDetails.short_code
                         fn([
                             _id: this.getDatabaseName(),
                             short_code: this.short_code,
-                            schema_structure: null
+                            schema_structure: dbDetails.structure_json != null ?
+                                (new JsonSlurper()).parseText(dbDetails.structure_json) : null
                         ])
                     } else {
                         this.context = dbDetails.context
@@ -244,8 +256,8 @@ class SchemaDef {
                 this.md5,
                 this.statement_separator,
                 this.current_host_id,
-                null
-                //structure != null ? (new JsonBuilder(structure).toString()) : null
+                this.structure != null ?
+                    (new JsonBuilder(this.structure).toString()) : null
             ], {
                 connection.close()
                 if (it.succeeded()) {
@@ -271,7 +283,8 @@ class SchemaDef {
                     this.saveToDatabase({ result ->
                         fn([
                             _id: this.getDatabaseName(),
-                            short_code: this.short_code
+                            short_code: this.short_code,
+                            schema_structure: this.structure
                         ])
                     })
                 },
@@ -364,9 +377,31 @@ class SchemaDef {
             def statements = DatabaseClient.parseStatementGroups(this.ddl, this.statement_separator, host.batch_separator)
 
             DatabaseClient.executeSerially(hostConnection, statements, {
+                boolean needsToUpdateStructure = (this.structure == null && this.schema_def_id != null)
+                Map schema_filters = [
+                        "SQL Server": "dbo",
+                        "MySQL": null,
+                        "PostgreSQL": "public",
+                        "Oracle": ("user_" + this.getDatabaseName()).toUpperCase()
+                ]
+                if (schema_filters.containsKey(this.simple_name)) {
+                    this.structure = getSchemaStructure((Connection) hostConnection.unwrap(),
+                            this.simple_name,
+                            schema_filters[this.simple_name]
+                    )
+                }
+
+                if (needsToUpdateStructure && this.structure != null) {
+                    this.updateStructure({
+                        adminHostConnection.close({
+                            successHandler(host, hostConnection)
+                        })
+                    })
+                } else {
                 adminHostConnection.close({
                     successHandler(host, hostConnection)
                 })
+                }
             },
             { errorMessage ->
                 // something went wrong - probably bad ddl
@@ -411,5 +446,64 @@ class SchemaDef {
                 }
             })
         })
+    }
+
+
+    def updateStructure(fn) {
+        DatabaseClient.getConnection(this.vertx, {connection ->
+            connection.updateWithParams("""
+            UPDATE
+                schema_defs
+            SET
+                structure_json = ?
+            WHERE
+                id = ?
+            """,
+            [
+                this.structure != null ?
+                    (new JsonBuilder(this.structure).toString()) : null,
+                this.schema_def_id
+            ], {
+                connection.close()
+                if (it.succeeded()) {
+                    fn(it.result())
+                } else {
+                    throw new Exception(it.cause().getMessage())
+                }
+            })
+        })
+    }
+
+    // We have to use CompileStatic for this function because Groovy 2.2 doesn't play well with the Oracle thin driver when using dynamic types
+    // See here for details:
+    // http://jira.codehaus.org/browse/GROOVY-7105
+    // https://groups.google.com/forum/#!msg/groovy-user/_w7qoAkKERM/tsOXq0861woJ
+    @groovy.transform.CompileStatic
+    List getSchemaStructure(Connection connection, String dbTypeName, String filter) {
+        List structure = []
+        String[] types = ["TABLE","VIEW"]
+
+        ResultSet tables = connection.metaData.getTables(null, filter, null, types)
+        while (tables.next()) {
+
+            if (dbTypeName != "PostgreSQL" || !(tables.getString("TABLE_NAME") =~ /^deferred_.*/) ) {
+                structure.add([
+                        "table_name": tables.getString("TABLE_NAME"),
+                        "table_type": tables.getString("TABLE_TYPE"),
+                        "columns": (List) []
+                ])
+
+                ResultSet columns = connection.metaData.getColumns(tables.getString("TABLE_CAT"), tables.getString("TABLE_SCHEM"), tables.getString("TABLE_NAME"), null)
+
+                while (columns.next()) {
+                    ((List) ((Map) structure[-1]).get('columns')).add([
+                        "name": columns.getString("COLUMN_NAME"),
+                        "type": columns.getString("TYPE_NAME") + "(" + columns.getString("COLUMN_SIZE") + ")"
+                    ])
+                }
+            }
+        }
+
+        return structure
     }
 }
