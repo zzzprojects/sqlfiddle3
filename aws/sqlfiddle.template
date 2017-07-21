@@ -930,6 +930,35 @@
                     "id": "01beea7e-a8d1-42b2-a4b7-7458cc62459f"
                 }
             }
+        },
+        "KILLTASK": {
+            "Type": "AWS::Lambda::Function",
+            "Properties": {
+                "Code": {
+                    "S3Bucket": "sqlfiddle3",
+                    "S3Key": "sqlfiddle-lambda.zip"
+                },
+                "Environment": {
+                    "Variables": {
+                        "CLUSTERNAME": "sqlfiddle3"
+                    }
+                },
+                "FunctionName": "killTask",
+                "Handler": "manageAppServers.killTask",
+                "Runtime": "nodejs6.10",
+                "Timeout": 10,
+                "Role": {
+                    "Fn::GetAtt": [
+                        "HOSTMAINTENANCEROLE",
+                        "Arn"
+                    ]
+                }
+            },
+            "Metadata": {
+                "AWS::CloudFormation::Designer": {
+                    "id": "d8ce259c-ec6c-4fe9-8a39-082761337807"
+                }
+            }
         }
     },
     "Metadata": {
@@ -1240,8 +1269,8 @@
                     "height": 60
                 },
                 "position": {
-                    "x": 1869.2863649994156,
-                    "y": 1159.2337360420024
+                    "x": 1870,
+                    "y": 1160
                 },
                 "z": 0,
                 "embeds": [],
@@ -1672,6 +1701,18 @@
                     "0250e9ef-924e-4fa9-9dc6-6e1c9708c558",
                     "6371dfc1-9122-415a-a3c3-0b1f2e7901a0"
                 ]
+            },
+            "d8ce259c-ec6c-4fe9-8a39-082761337807": {
+                "size": {
+                    "width": 60,
+                    "height": 60
+                },
+                "position": {
+                    "x": 2360,
+                    "y": 1160
+                },
+                "z": 0,
+                "embeds": []
             }
         }
     }
