@@ -60,15 +60,23 @@
                         <li>
                             <a href="#textToDDLModal" data-toggle="modal"><i class="icon-wrench"></i>Text to DDL</a>
                         </li>
+                    </ul>
 
-                        <!--li class="dropdown" id="userOptions">
-                            <a class="dropdown-toggle" data-toggle="dropdown" href="#">
-                                <b class="caret"></b>
-                                <i class="icon-tasks"></i>User Options
-                            </a>
-                            <ul class="dropdown-menu">
-                            </ul>
-                        </li-->
+                    <ul class="nav pull-right">
+                        <li>
+
+                            <form action="https://www.paypal.com/cgi-bin/webscr" method="post" id="paypal_donate" style="margin: 6px 0 0 0;">
+                            <input type="hidden" name="cmd" value="_s-xclick">
+                            <input type="hidden" name="encrypted" value="-----BEGIN PKCS7-----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-----END PKCS7-----
+                            ">
+                            <input type="image" style="width:80px;height:24px;" src="images/btn_donate_SM.gif" border="0" name="submit" alt="PayPal - The safer, easier way to pay online!">
+                            </form>
+
+                        </li>
+
+                        <li class="optional">
+                            <a href="about.html"><i class="icon-info-sign"></i>About</a>
+                        </li>
 
 
                     </ul>
@@ -227,6 +235,15 @@
 
     </div><!-- end container-fluid -->
 
+    <!--
+    <div id="hosting">
+         <ul id="hostingPartners">
+            <li id="sqlsentry" style="display:none"><a href="http://www.sqlsentry.com/download-trial/trial?utm_source=sqlfiddle&utm_medium=banner&utm_term=728x90&utm_content=3-feature-bullets-free-trial&utm_campaign=201505-complete-performance-solution&ad=201505-banner-sqlfiddle-complete" target="_new"><img src="images/sqlsentry/00.png" alt="SQL Sentry"></a></li>
+            <li id="sqldep"><a href="http://sqldep.com/?utm_source=SQLfiddle&utm_medium=banner&utm_content=728x90&utm_campaign=SQLfiddle" target="_new"><img src="images/sqldep.png" alt="SQL Dep"></a></li>
+        </ul>
+    </div>
+    -->
+
     <div id="textToDDLModal" class="modal">
         <div class="modal-header">
             <a class="close" data-dismiss="modal">x</a>
@@ -276,5 +293,17 @@
 
     <script type="text/javascript" src="javascript/main_min.js"></script>
 
+<script type="text/javascript">
+          var _gaq = _gaq || [];
+          _gaq.push(['_setAccount', 'UA-28576776-1']);
+          _gaq.push(['_setDomainName', 'sqlfiddle.com']);
+          _gaq.push(['_trackPageview']);
+
+          (function() {
+            var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+            ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+            var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+          })();
+</script>
   </body>
 </html>
