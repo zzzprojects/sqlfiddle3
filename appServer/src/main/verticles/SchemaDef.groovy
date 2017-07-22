@@ -370,19 +370,15 @@ class SchemaDef {
     def executeDDL (adminHostConnection, host, successHandler, errorHandler) {
         // get a connection to the new, blank database as a non-admin user...
         host.getUserHostConnection(this.vertx, this.getDatabaseName(), { hostConnection ->
-            // timeout queries in case someone is trying to run something crazy
-            // commented-out because it doesn't seem to work...?
-            //hostConnection.setQueryTimeout((int)10)
-
             def statements = DatabaseClient.parseStatementGroups(this.ddl, this.statement_separator, host.batch_separator)
 
             DatabaseClient.executeSerially(hostConnection, statements, {
                 boolean needsToUpdateStructure = (this.structure == null && this.schema_def_id != null)
                 Map schema_filters = [
-                        "SQL Server": "dbo",
-                        "MySQL": null,
-                        "PostgreSQL": "public",
-                        "Oracle": ("user_" + this.getDatabaseName()).toUpperCase()
+                    "SQL Server": "dbo",
+                    "MySQL": null,
+                    "PostgreSQL": "public",
+                    "Oracle": ("user_" + this.getDatabaseName()).toUpperCase()
                 ]
                 if (schema_filters.containsKey(this.simple_name)) {
                     this.structure = getSchemaStructure((Connection) hostConnection.unwrap(),

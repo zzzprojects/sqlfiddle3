@@ -110,7 +110,11 @@ class Host {
                     max_pool_size: 2,
                     max_idle_time: 2
                 ],
-                successHandler,
+                { connection ->
+                    // timeout queries in case someone is trying to run something crazy
+                    connection.setQueryTimeout(3)
+                    successHandler(connection)
+                },
                 errorHandler
             )
         }
