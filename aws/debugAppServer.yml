@@ -1,0 +1,6 @@
+version: '2'
+services:
+  appServer:
+    image: "$ECR_URI:appServer"
+    extra_hosts:
+     - "appDatabase:$APP_DATABASE_IP"
