@@ -18,7 +18,7 @@ class Host {
         this.saveDetails(hostDetails)
     }
 
-    private readHostDetails(vertx, fn) {
+    private readHostDetails(vertx, successHandler, errorHandler) {
         DatabaseClient.singleRead(vertx, """
             SELECT
                 h.id as host_id,
@@ -40,9 +40,9 @@ class Host {
         """, [this.host_id], { result ->
             if (result != null) {
                 this.saveDetails(result)
-                fn()
+                successHandler()
             } else {
-                throw new Exception("Unable to find host for provided id")
+                errorHandler("Unable to find host for provided id")
             }
         })
     }
@@ -90,7 +90,7 @@ class Host {
             )
         }
         if (!this.jdbc_url_template) {
-            this.readHostDetails(vertx, readyFunction)
+            this.readHostDetails(vertx, readyFunction, errorHandler)
         } else {
             readyFunction()
         }
@@ -119,7 +119,7 @@ class Host {
             )
         }
         if (!this.jdbc_url_template) {
-            this.readHostDetails(vertx, readyFunction)
+            this.readHostDetails(vertx, readyFunction, errorHandler)
         } else {
             readyFunction()
         }
