@@ -189,7 +189,7 @@
             <plugin>
                 <groupId>com.spotify</groupId>
                 <artifactId>docker-maven-plugin</artifactId>
-                <version>0.2.8</version>
+                <version>1.0.0</version>
                 <executions>
                   <execution>
                     <id>docker</id>
