@@ -1,4 +1,4 @@
-# SQL Fiddle, take 3 (or so?)
+# SQL Fiddle, version 3
 
 This version of the system is intended to make use of Docker for the different systems (app server, app database, fiddle databases, etc...)
 
@@ -15,29 +15,23 @@ To get running locally:
     (cd appServer/; mvn clean package)
     docker-compose up -d
 
-After you run the above command, you can open the site by visiting http://localhost:8080
+After you run the above command, you can open the site by visiting http://localhost:8080 . This port exposes the app via the varnish cache server.
 
-If building on a Mac, be sure to prep docker first:
+## To do development in a local environment, start with above and then:
 
-    docker-machine start
-    eval $(docker-machine env)
+*requires local install of Grunt*
 
-Also, you'll have to access the site via the docker-machine ip address, like so:
-
-    docker-machine ip
-    > 192.168.99.100
-
-Then you can access the site by visiting http://192.168.99.100:8080
-
-## To do development in a local environment:
-
-*requires local install of PostgreSQL, MySQL and Vert.x*
-
-    # next line is for connecting with a remote debugger such as IntelliJ
-    export VERTX_OPTS='-Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=n,address=5005'
-    (cd appServer; mvn clean package)
     (cd appServer/target; grunt) &
-    (cd appServer/target/docker; CLASSPATH=.:lib/* vertx run sqlfiddle.groovy)
+
+You can directly access the app server by visiting http://localhost:8081 . This port bypasses the varnish cache server, which is necessary to see live changes made to the app server.
+
+You can attach a debugger (for example, using IntelliJ) using port 5005.
+
+Edits made to your webroot files will be redeployed to your docker container and visible immediately. Changes to verticles will require restarting the docker container to be seen.
+
+Restart the app server docker container with this command:
+
+    docker-compose restart appServer
 
 ## Commercial software requirements
 
