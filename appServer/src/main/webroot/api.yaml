@@ -1,0 +1,289 @@
+swagger: "2.0"
+info:
+  description: "A tool for easy online testing and sharing of database problems and their solutions."
+  version: "1.0.0"
+  title: "SQL Fiddle"
+  contact:
+    email: "admin@sqlfiddle.com"
+  license:
+    name: "MIT"
+    url: "https://opensource.org/licenses/MIT"
+host: "sqlfiddle.com"
+basePath: "/backend"
+tags:
+- name: "fiddles"
+  description: "Creating database schemas and running queries within them"
+schemes:
+- "http"
+paths:
+  /dbTypes:
+    get:
+      tags:
+      - "fiddles"
+      summary: "Get a list of database types"
+      description: ""
+      produces:
+      - "application/json"
+      responses:
+        200:
+          description: "successful response"
+          schema:
+            $ref: "#/definitions/DBTypes"
+  /createSchema:
+    post:
+      tags:
+      - "fiddles"
+      summary: "Create a new schema"
+      description: "This is used to execute queries within"
+      consumes:
+      - "application/json"
+      produces:
+      - "application/json"
+      parameters:
+      - in: "body"
+        name: "body"
+        description: "Details of schema"
+        required: true
+        schema:
+          type: "object"
+          properties:
+            db_type_id:
+              type: "integer"
+              description: "The id of the database type returned from /dbTypes"
+            ddl:
+              type: "string"
+              description: "The statements used to create this particular schema"
+            statement_separator:
+              type: "string"
+              default: ";"
+              description: "The separator used to separate each statement within the ddl value"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            type: "object"
+            properties:
+              error:
+                type: "string"
+                description: "Only defined when unable to create the schema. Details from the database server about the failure"
+              _id:
+                type: "string"
+              short_code:
+                type: "string"
+              schema_structure:
+                $ref: "#/definitions/Structure"
+  /executeQuery:
+    post:
+      tags:
+      - "fiddles"
+      summary: "Execute a query within your schema"
+      description: "Query the schema to see the results"
+      consumes:
+      - "application/json"
+      produces:
+      - "application/json"
+      parameters:
+      - in: "body"
+        name: "body"
+        description: "Details of query"
+        required: true
+        schema:
+          type: "object"
+          properties:
+            db_type_id:
+              type: "integer"
+              description: "The id of the database type returned from /dbTypes"
+            schema_short_code:
+              type: "string"
+              description: "The value for 'short_code' produced by the call to createSchema"
+            sql:
+              type: "string"
+              description: "The statements used to query within the schema"
+            statement_separator:
+              type: "string"
+              default: ";"
+              description: "The separator used to separate each statement within the ddl value"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            type: "object"
+            properties:
+              ID:
+                type: "integer"
+              sets:
+                type: "array"
+                items:
+                  type: "object"
+                  description: "Each item within the 'sets' array represents an individual query result set returned from the database"
+                  properties:
+                    SUCCEEDED:
+                      type: "boolean"
+                    STATEMENT:
+                      type: "string"
+                    EXECUTIONTIME:
+                      type: "integer"
+                    EXECUTIONPLAN:
+                      $ref: "#/definitions/ResultSet"
+                    EXECUTIONPLANRAW:
+                      $ref: "#/definitions/ResultSet"
+                    RESULTS:
+                      $ref: "#/definitions/ResultSet"
+  /loadContent/{db_type_id}/{short_code}:
+    get:
+      tags:
+      - "fiddles"
+      summary: "Returns an existing fiddle schema definition"
+      description: ""
+      produces:
+      - "application/json"
+      parameters:
+      - name: "db_type_id"
+        in: "path"
+        description: "ID of database type"
+        required: true
+        type: "integer"
+      - name: "short_code"
+        in: "path"
+        description: "hash code identifying the unique schema"
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            type: "object"
+            properties:
+              ddl:
+                type: "string"
+                description: "The statements used to create this particular schema"
+              schema_statement_separator:
+                type: "string"
+                default: ";"
+                description: "The separator used to separate each statement within the ddl value"
+              schema_structure:
+                $ref: "#/definitions/Structure"
+              full_name:
+                type: "string"
+  /loadContent/{db_type_id}/{short_code}/{query_id}:
+    get:
+      tags:
+      - "fiddles"
+      summary: "Returns an existing fiddle schema definition along with query results"
+      description: ""
+      produces:
+      - "application/json"
+      parameters:
+      - name: "db_type_id"
+        in: "path"
+        description: "ID of database type"
+        required: true
+        type: "integer"
+      - name: "short_code"
+        in: "path"
+        description: "hash code identifying the unique schema"
+        required: true
+        type: "string"
+      - name: "query_id"
+        in: "path"
+        description: "ID of query to execute"
+        required: true
+        type: "integer"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            type: "object"
+            properties:
+              full_name:
+                type: "string"
+              ddl:
+                type: "string"
+                description: "The statements used to create this particular schema"
+              schema_statement_separator:
+                type: "string"
+                default: ";"
+                description: "The separator used to separate each statement within the ddl value"
+              schema_structure:
+                $ref: "#/definitions/Structure"
+              sql:
+                type: "string"
+                description: "The statements used to query within the schema"
+              query_statement_separator:
+                type: "string"
+                default: ";"
+                description: "The separator used to separate each statement within the sql value"
+              sets:
+                type: "array"
+                items:
+                  type: "object"
+                  description: "Each item within the 'sets' array represents an individual query result set returned from the database"
+                  properties:
+                    SUCCEEDED:
+                      type: "boolean"
+                    STATEMENT:
+                      type: "string"
+                    EXECUTIONTIME:
+                      type: "integer"
+                    EXECUTIONPLAN:
+                      $ref: "#/definitions/ResultSet"
+                    EXECUTIONPLANRAW:
+                      $ref: "#/definitions/ResultSet"
+                    RESULTS:
+                      $ref: "#/definitions/ResultSet"
+definitions:
+  DBTypes:
+    type: "object"
+    properties:
+      result:
+        type: "array"
+        items:
+          type: "object"
+          properties:
+            db_type_id:
+              type: "integer"
+            simple_name:
+              type: "string"
+            full_name:
+              type: "string"
+            context:
+              type: "string"
+            batch_separator:
+              type: "string"
+            sample_fragment:
+              type: "string"
+  ResultSet:
+    type: "array"
+    items:
+      type: "object"
+      properties:
+        COLUMNS:
+          type: "array"
+          items:
+            type: "string"
+        DATA:
+          type: "array"
+          items:
+            type: "array"
+            description: "The items for 'DATA' could be anything, based on the query definition. There will be one entry in each DATA item for each entry in the COLUMNS array"
+  Structure:
+    type: "array"
+    items:
+      type: "object"
+      properties:
+        table_type:
+          type: "string"
+          enum:
+          - "TABLE"
+          - "VIEW"
+        table_name:
+          type: "string"
+        columns:
+          type: "array"
+          items:
+            type: "object"
+            properties:
+              name:
+                type: "string"
+              type:
+                type: "string"

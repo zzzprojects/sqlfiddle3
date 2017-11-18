@@ -3,3 +3,4 @@ appServer/target
 .idea
 *.iml
 .vagrant
+node_modules

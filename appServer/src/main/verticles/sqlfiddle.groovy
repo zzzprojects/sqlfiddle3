@@ -1,9 +1,12 @@
 import io.vertx.core.http.HttpMethod
 import io.vertx.ext.web.handler.BodyHandler
+import io.vertx.ext.web.handler.CorsHandler
 import io.vertx.ext.web.handler.StaticHandler
 import io.vertx.ext.web.Router
 
 def router = Router.router(vertx)
+
+router.route().handler(CorsHandler.create("*").allowedMethods([HttpMethod.GET,HttpMethod.POST].toSet()))
 router.route().handler(BodyHandler.create().setBodyLimit(8000))
 
 router.route().pathRegex("^(?!/backend)/.*").handler(StaticHandler.create())
