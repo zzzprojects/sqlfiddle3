@@ -6,29 +6,13 @@ class DBTypes {
             d.context,
             d.full_name,
             d.simple_name,
-            d.jdbc_class_name as "className",
             d.sample_fragment,
-            d.batch_separator,
-            d.execution_plan_prefix,
-            d.execution_plan_suffix,
-            d.execution_plan_xslt,
-            count(h.id) as num_hosts
+            d.batch_separator
         FROM
             db_types d
                 LEFT OUTER JOIN hosts h ON
                     d.id = h.db_type_id
         ${where}
-        GROUP BY
-            d.id,
-            d.context,
-            d.full_name,
-            d.simple_name,
-            d.jdbc_class_name,
-            d.sample_fragment,
-            d.batch_separator,
-            d.execution_plan_prefix,
-            d.execution_plan_suffix,
-            d.execution_plan_xslt
         ORDER BY
             d.simple_name,
             d.is_latest_stable desc,
