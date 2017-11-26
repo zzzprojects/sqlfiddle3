@@ -18,13 +18,13 @@ router.route("/backend/dbTypes").handler({ routingContext ->
 })
 
 router.post("/backend/createSchema").handler({ routingContext ->
-    (new SchemaDef(vertx)).processCreateRequest(routingContext.getBodyAsJson().map, { response ->
+    (new SchemaDef(vertx)).processCreateRequest(routingContext.getBodyAsJson(), { response ->
         RESTUtils.writeJSONResponse(routingContext, response)
     })
 })
 
 router.post("/backend/executeQuery").handler({ routingContext ->
-    (new Query(vertx, routingContext.getBodyAsJson().map)).execute({ response ->
+    (new Query(vertx, routingContext.getBodyAsJson())).execute({ response ->
         if (response.error) {
             response.sets = [[ERRORMESSAGE:response.error]]
         }

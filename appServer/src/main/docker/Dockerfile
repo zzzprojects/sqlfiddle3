@@ -1,4 +1,4 @@
-FROM vertx/vertx3:latest
+FROM vertx/vertx3:3.4.2
 
 ENV VERTICLE_NAME sqlfiddle.groovy
 ENV VERTICLE_HOME /usr/verticles
