@@ -7,12 +7,20 @@ class DBTypes {
             d.full_name,
             d.simple_name,
             d.sample_fragment,
-            d.batch_separator
+            d.batch_separator,
+            count(h.id) as num_hosts
         FROM
             db_types d
                 LEFT OUTER JOIN hosts h ON
                     d.id = h.db_type_id
         ${where}
+        GROUP BY
+            d.id,
+            d.context,
+            d.full_name,
+            d.simple_name,
+            d.sample_fragment,
+            d.batch_separator
         ORDER BY
             d.simple_name,
             d.is_latest_stable desc,

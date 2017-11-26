@@ -251,6 +251,8 @@ definitions:
               type: "string"
             sample_fragment:
               type: "string"
+            num_hosts:
+              type: "integer"
   ResultSet:
     type: "array"
     items:
