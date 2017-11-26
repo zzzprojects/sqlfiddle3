@@ -27,5 +27,11 @@ sub vcl_backend_response {
         set beresp.ttl = 0s;
     }
 
+    if (bereq.method == "OPTIONS") {
+        set beresp.http.Access-Control-Allow-Origin = "*";
+        set beresp.http.Access-Control-Allow-Methods = "GET, POST, OPTIONS";
+        set beresp.http.Access-Control-Allow-Headers = "Origin, Accept, Content-Type, X-Requested-With";
+    }
+
     set beresp.do_gzip = true;
 }
