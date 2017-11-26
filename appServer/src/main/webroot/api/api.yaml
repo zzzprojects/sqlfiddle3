@@ -8,7 +8,6 @@ info:
   license:
     name: "MIT"
     url: "https://opensource.org/licenses/MIT"
-host: "sqlfiddle.com"
 basePath: "/backend"
 tags:
 - name: "fiddles"

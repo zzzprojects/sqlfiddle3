@@ -4,6 +4,17 @@ module.exports = function(grunt) {
         targetFolder = 'docker/webroot/';
 
     grunt.initConfig({
+        copy: {
+            swagger: {
+                files: [{
+                    cwd     : targetFolder + 'node_modules/swagger-ui-dist/',
+                    src     : [ '**/*', '*', '!index.html' ],
+                    dest    : targetFolder + 'api/',
+                    flatten : false,
+                    expand  : true
+                }]
+            }
+        },
         sync: {
             webroot: {
                 files: [{
@@ -53,7 +64,7 @@ module.exports = function(grunt) {
                     out: targetFolder + "javascript/main_min.js"
                 }
             },
-            minifyOAuthJS: {
+/*            minifyOAuthJS: {
                 options: {
                     baseUrl: targetFolder + "javascript",
                     mainConfigFile: targetFolder + "javascript/oauth.js",
@@ -67,6 +78,7 @@ module.exports = function(grunt) {
                     out: targetFolder + "javascript/oauth_min.js"
                 }
             },
+*/
             minifyMainCSS: {
                 options: {
                     optimizeCss: 'standard',
@@ -92,7 +104,7 @@ module.exports = function(grunt) {
                 tasks: ['sync:webroot', 'less', 'requirejs:minifyMainCSS', 'requirejs:minifyPrintCSS' ]
             },
             copyStatic: {
-                files: [srcFolder + '*.html', srcFolder + 'images/**', srcFolder + 'img/*',],
+                files: [srcFolder + '*.html', srcFolder + 'images/**', srcFolder + 'img/*', srcFolder + 'api/*'],
                 tasks: ['sync:webroot']
             },
             copyVerticles: {
@@ -106,8 +118,9 @@ module.exports = function(grunt) {
     grunt.loadNpmTasks('grunt-sync');
     grunt.loadNpmTasks('grunt-contrib-requirejs');
     grunt.loadNpmTasks('grunt-contrib-less');
+    grunt.loadNpmTasks('grunt-contrib-copy');
 
-    grunt.registerTask('build', ['sync:verticles', 'less', 'requirejs']);
+    grunt.registerTask('build', ['sync:verticles', 'less', 'requirejs', 'copy:swagger']);
     grunt.registerTask('default', ['build', 'watch']);
 
 };
