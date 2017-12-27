@@ -33,16 +33,6 @@ Restart the app server docker container with this command:
 
     docker-compose restart appServer
 
-## Commercial software requirements
-
-If you want to run the commercial database software (Microsoft SQL Server 2014 Express, Oracle 11g R2 XE) you must have a Windows Server 2008 R2 (or higher) server available. The core software must be installed prior to attempting to using it with SQL Fiddle. Below are the requirements for how the commercial databases should be installed. The docker-compose file assumes this server is listening at ip address 192.168.99.101
-
-### SQL Server 2014 Express
-
-1) Don't use the "SQL Server Replication" Feature (leave the others checked)
-2) Use the "Default instance" (leave the "Instance ID" as "MSSQLSERVER")
-3) Authentication mode should be "Mixed"; "sa" password should be set to "SQLServerPassword"
-4) Enable TCP/IP connections in the network configuration
 
 ### Oracle 11g R2 XE
 1) "system" password should be set to "password"
@@ -169,6 +159,8 @@ Upload the docker images to ECR:
     docker push $ECR_URI:postgresql93Host
     docker tag sqlfiddle:postgresql96Host $ECR_URI:postgresql96Host
     docker push $ECR_URI:postgresql96Host
+    docker tag sqlfiddle:mssql2017Host $ECR_URI:mssql2017Host
+    docker push $ECR_URI:mssql2017Host
 
 Pushing may take a long time. If it gets stalled out, use `docker-machine restart` between attempts
 
@@ -217,6 +209,8 @@ Bring the docker-based database services up:
         --project-name postgresql93 service up
     ecs-cli compose --file aws/docker-compose-postgresql96.yml \
         --project-name postgresql96 service up
+    ecs-cli compose --file aws/docker-compose-mssql2017.yml \
+        --project-name mssql2017 service up
 
 Bring any commercial database servers that are running on EC2 hosts (not docker containers):
 

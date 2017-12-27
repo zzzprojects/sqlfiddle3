@@ -39,3 +39,7 @@ services:
     build:
       context: ./mysql56Host
     image: sqlfiddle:mysql56Host
+  mssql2017Host:
+    build:
+      context: ./mssql2017Host
+    image: sqlfiddle:mssql2017Host

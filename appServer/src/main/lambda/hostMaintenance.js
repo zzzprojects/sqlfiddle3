@@ -35,6 +35,14 @@ var getHostTemplate = (hostType, ipAddress, port, connection_meta) => {
             "admin_password": "password",
             connection_meta
         },
+        "ecscompose-mssql2017": {
+            "full_name": "MS SQL Server 2017",
+            "jdbc_url_template": `jdbc:jtds:sqlserver://${ipAddress}:${port}/#databaseName#`,
+            "default_database": "master",
+            "admin_username": "sa",
+            "admin_password": "SQLServerPassword!",
+            connection_meta
+        },
         "oracle11g": {
             "full_name": "Oracle 11g R2",
             "jdbc_url_template": `jdbc:oracle:thin:@//${ipAddress}:${port}/xe`,
