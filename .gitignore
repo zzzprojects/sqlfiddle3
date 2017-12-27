@@ -4,3 +4,4 @@ appServer/target
 *.iml
 .vagrant
 node_modules
+*.zip

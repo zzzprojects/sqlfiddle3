@@ -9,9 +9,6 @@ services:
     - "5005:5005"
     environment:
       - VERTX_OPTS=-Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=n,address=5005 -Dvertx.disableFileCaching=true -Dvertx.disableFileCPResolving=true
-    extra_hosts:
-    - "sqlserver2014Host:192.168.99.101"
-    - "oracle11gHost:192.168.99.101"
   varnish:
     build:
       context: ./varnish
@@ -43,3 +40,8 @@ services:
     build:
       context: ./mssql2017Host
     image: sqlfiddle:mssql2017Host
+  oracle11gHost:
+    build:
+      context: ./oracle11gHost
+    shm_size: 1G
+    image: sqlfiddle:oracle11gHost

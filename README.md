@@ -17,6 +17,16 @@ To get running locally:
 
 After you run the above command, you can open the site by visiting http://localhost:8080 . This port exposes the app via the varnish cache server.
 
+### Optional: Oracle 11g R2 XE
+
+If you want to include Oracle in your environment, you have to do some manual steps before you run the above commands (thanks Oracle!):
+
+1) Download ojdbc6.jar from http://www.oracle.com/technetwork/database/enterprise-edition/jdbc-112010-090769.html
+2) mkdir appServer/src/main/verticles/lib/ && cp ojdbc6.jar appServer/src/main/verticles/lib/
+3) Download oracle-xe-11.2.0-1.0.x86_64.rpm.zip from http://www.oracle.com/technetwork/database/database-technologies/express-edition/downloads/index.html
+4) cp oracle-xe-11.2.0-1.0.x86_64.rpm.zip oracle11gHost
+
+
 ## To do development in a local environment, start with above and then:
 
 *requires local install of Grunt*
@@ -32,13 +42,6 @@ Edits made to your webroot files will be redeployed to your docker container and
 Restart the app server docker container with this command:
 
     docker-compose restart appServer
-
-
-### Oracle 11g R2 XE
-1) "system" password should be set to "password"
-2) Download ojdbc6.jar from here: http://www.oracle.com/technetwork/database/enterprise-edition/jdbc-112010-090769.html
-3) Put ojdbc6.jar in appServer/src/main/verticles/lib before you run `mvn clean package`
-
 
 ## Setting up in Amazon Web Services
 

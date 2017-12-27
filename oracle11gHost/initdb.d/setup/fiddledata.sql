@@ -1,0 +1,4 @@
+CREATE TABLESPACE FIDDLEDATA DATAFILE '/u01/app/oracle/oradata/XE/fiddledata.dbf'
+    SIZE 500M
+    AUTOEXTEND ON NEXT 100M
+    MAXSIZE 2G;
