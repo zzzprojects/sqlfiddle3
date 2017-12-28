@@ -1,0 +1,49 @@
+apiVersion: extensions/v1beta1
+kind: ReplicaSet
+metadata:
+  name: mssql2017
+spec:
+  replicas: 2
+  template:
+    metadata:
+      labels:
+        type: mssql2017
+    spec:
+      containers:
+        - image: sqlfiddle:mssql2017Host
+          imagePullPolicy: IfNotPresent
+          name: mssql2017
+          ports:
+            - containerPort: 1433
+              protocol: TCP
+          resources:
+              requests:
+                memory: "512Mi"
+          readinessProbe:
+            exec:
+              command:
+                - "/ready.sh"
+            initialDelaySeconds: 5
+            timeoutSeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            exec:
+              command:
+                - "/live.sh"
+            initialDelaySeconds: 5
+            timeoutSeconds: 5
+            periodSeconds: 60
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: mssql2017-service
+  labels:
+    role: host
+spec:
+  clusterIP: None
+  ports:
+    - port: 1433
+      name: database
+  selector:
+    type: mssql2017

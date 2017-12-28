@@ -5,5 +5,7 @@ ENV SA_PASSWORD=SQLServerPassword!
 ENV MSSQL_PID=Express
 
 COPY initdb.d /docker-entrypoint-initdb.d
+COPY live.sh /
+COPY ready.sh /
 
 CMD /bin/bash /docker-entrypoint-initdb.d/entrypoint.sh
