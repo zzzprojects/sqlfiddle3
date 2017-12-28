@@ -19,7 +19,7 @@ spec:
               protocol: TCP
           resources:
               requests:
-                memory: "1024Mi"
+                memory: "512Mi"
         - image: sqlfiddle:varnish
           imagePullPolicy: IfNotPresent
           name: varnish
@@ -34,7 +34,7 @@ spec:
             value: "8081"
           resources:
               requests:
-                memory: "256Mi"
+                memory: "128Mi"
 ---
 kind: Service
 apiVersion: v1

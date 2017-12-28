@@ -23,6 +23,7 @@ Once your minikube environment is prepared, you can build SQL Fiddle within it u
     docker build -t sqlfiddle:appDatabase appDatabase
     docker build -t sqlfiddle:hostMonitor hostMonitor
     docker build -t sqlfiddle:postgresql96Host postgresql96Host
+    docker build -t sqlfiddle:postgresql93Host postgresql93Host
     docker build -t sqlfiddle:mysql56Host mysql56Host
     docker build -t sqlfiddle:mssql2017Host mssql2017Host
     docker build -t sqlfiddle:oracle11gHost oracle11gHost --shm-size 1G

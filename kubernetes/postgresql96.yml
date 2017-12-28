@@ -1,0 +1,49 @@
+apiVersion: extensions/v1beta1
+kind: ReplicaSet
+metadata:
+  name: postgresql96
+spec:
+  replicas: 2
+  template:
+    metadata:
+      labels:
+        type: postgresql96
+    spec:
+      containers:
+        - image: sqlfiddle:postgresql96Host
+          imagePullPolicy: IfNotPresent
+          name: postgresql96
+          ports:
+            - containerPort: 5432
+              protocol: TCP
+          resources:
+              requests:
+                memory: "256Mi"
+          readinessProbe:
+            exec:
+              command:
+                - "/ready.sh"
+            initialDelaySeconds: 5
+            timeoutSeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            exec:
+              command:
+                - "/live.sh"
+            initialDelaySeconds: 5
+            timeoutSeconds: 5
+            periodSeconds: 60
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: postgresql96-service
+  labels:
+    role: host
+spec:
+  clusterIP: None
+  ports:
+    - port: 5432
+      name: database
+  selector:
+    type: postgresql96
