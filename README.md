@@ -11,9 +11,9 @@ It is also implemented with Vert.x in the application tier.
     Docker 17+
     Minikube 0.24.1+ (Minikube requires several dependencies; see https://kubernetes.io/docs/tasks/tools/install-minikube/)
 
-To get running locally, first start minikube with a 4GB VM and configure docker to use it:
+To get running locally, first start minikube with a 8GB VM and configure docker to use it:
 
-    minikube start --insecure-registry 10.0.0.0/24 --memory 4096
+    minikube start --insecure-registry 10.0.0.0/24 --memory 8192
     eval $(minikube docker-env)
 
 Once your minikube environment is prepared, you can build SQL Fiddle within it using these commands:
