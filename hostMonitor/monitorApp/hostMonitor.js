@@ -13,7 +13,14 @@ const client = new pg.Client(postgresConnectionConfig);
 
 client.connect(function (err) {
     if (err) {
-        throw err;
+        console.log('Failure to connect to appdatabase...');
+        console.log(err);
+
+        setTimeout(() => {
+            process.exit(1);
+        }, 2000);
+
+        return;
     }
     const Api = require('kubernetes-client');
     const JSONStream = require('json-stream');
@@ -93,7 +100,7 @@ client.connect(function (err) {
     });
 
     setTimeout(() => {
-        console.log('ENDING WATCH STREAM...')
+        console.log('ENDING WATCH STREAM...');
         stream.abort();
         process.exit(0);
     }, 1500000);
