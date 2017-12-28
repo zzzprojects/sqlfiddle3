@@ -1,0 +1,58 @@
+apiVersion: extensions/v1beta1
+kind: ReplicaSet
+metadata:
+  name: appservers
+spec:
+  replicas: 2
+  template:
+    metadata:
+      labels:
+        role: appserver
+    spec:
+      containers:
+        - image: sqlfiddle:appServer
+          imagePullPolicy: IfNotPresent
+          name: appserver
+          ports:
+            - containerPort: 8081
+              name: http
+              protocol: TCP
+          resources:
+              requests:
+                memory: "1024Mi"
+        - image: sqlfiddle:varnish
+          imagePullPolicy: IfNotPresent
+          name: varnish
+          ports:
+            - containerPort: 8080
+              name: http
+              protocol: TCP
+          env:
+          - name: VARNISH_BACKEND_HOST
+            value: "localhost"
+          - name: VARNISH_BACKEND_PORT
+            value: "8081"
+          resources:
+              requests:
+                memory: "256Mi"
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: appserver-service
+spec:
+  ports:
+    - port: 80
+      name: http
+      targetPort: 8080
+  selector:
+    role: appserver
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: ingress
+spec:
+  backend:
+    serviceName: appserver-service
+    servicePort: 80

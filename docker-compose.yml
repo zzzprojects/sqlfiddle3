@@ -5,7 +5,7 @@ services:
     - ./appServer/target/docker:/usr/verticles
     image: sqlfiddle:appServer
     ports:
-    - "8081:8080"
+    - "8081:8081"
     - "5005:5005"
     environment:
       - VERTX_OPTS=-Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=n,address=5005 -Dvertx.disableFileCaching=true -Dvertx.disableFileCPResolving=true
@@ -17,7 +17,7 @@ services:
     - "appServer"
     environment:
     - VARNISH_BACKEND_HOST=appServer
-    - VARNISH_BACKEND_PORT=8080
+    - VARNISH_BACKEND_PORT=8081
     ports:
     - "8080:8080"
   appDatabase:

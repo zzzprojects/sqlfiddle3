@@ -1,0 +1,25 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: appdatabase
+  labels:
+    role: appdatabase
+spec:
+  containers:
+    - image: sqlfiddle:appDatabase
+      imagePullPolicy: IfNotPresent
+      name: appdatabase
+      ports:
+        - containerPort: 5432
+          protocol: TCP
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: appdatabase
+spec:
+  ports:
+    - port: 5432
+      targetPort: 5432
+  selector:
+    role: appdatabase

@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: hostmonitor
+spec:
+  containers:
+    - image: sqlfiddle:hostMonitor
+      imagePullPolicy: IfNotPresent
+      name: hostmonitor
+      ports:
+        - containerPort: 5432
+          protocol: TCP
+      resources:
+          requests:
+            memory: "64Mi"

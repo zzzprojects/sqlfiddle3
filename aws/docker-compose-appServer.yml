@@ -14,4 +14,4 @@ services:
     mem_reservation: 256m
     environment:
     - VARNISH_BACKEND_HOST=appServer
-    - VARNISH_BACKEND_PORT=8080
+    - VARNISH_BACKEND_PORT=8081

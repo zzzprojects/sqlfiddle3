@@ -9,11 +9,25 @@ It is also implemented with Vert.x in the application tier.
     Java 8+
     Maven 3.3+
     Docker 17+
+    Minikube 0.24.1+ (Minikube requires several dependencies; see https://kubernetes.io/docs/tasks/tools/install-minikube/)
 
-To get running locally:
+To get running locally, first start minikube with a 4GB VM and configure docker to use it:
+
+    minikube start --insecure-registry 10.0.0.0/24 --memory 4096
+    eval $(minikube docker-env)
+
+Once your minikube environment is prepared, you can build SQL Fiddle within it using these commands:
 
     (cd appServer/; mvn clean package)
-    docker-compose up -d
+    docker build -t sqlfiddle:varnish varnish
+    docker build -t sqlfiddle:appDatabase appDatabase
+    docker build -t sqlfiddle:hostMonitor hostMonitor
+    docker build -t sqlfiddle:postgresql96Host postgresql96Host
+    docker build -t sqlfiddle:mysql56Host mysql56Host
+    docker build -t sqlfiddle:mssql2017Host mssql2017Host
+    docker build -t sqlfiddle:oracle11gHost oracle11gHost --shm-size 1G
+    kubectl create namespace sqlfiddle
+    kubectl --namespace sqlfiddle apply -f kubernetes
 
 After you run the above command, you can open the site by visiting http://localhost:8080 . This port exposes the app via the varnish cache server.
 
