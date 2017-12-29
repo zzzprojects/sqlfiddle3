@@ -27,14 +27,9 @@ client.connect(function (err) {
 
     const core = new Api.Core(Api.config.getInCluster());
     const jsonStream = new JSONStream();
+    var stream;
 
-    // watch a stream of changes related to database hosts
-    const stream = core.ns.endpoints
-        .matchLabels({ role: 'host' })
-        .getStream({ qs: { watch: true } });
-
-    stream.pipe(jsonStream);
-    jsonStream.on('data', endpoint => {
+    var watchStream = (endpoint) => {
         console.log(JSON.stringify(endpoint, null, 4));
 
         var hostType = endpoint.object.metadata.name,
@@ -97,13 +92,26 @@ client.connect(function (err) {
                 return Q.all(promises);
             });
         }
-    });
+    }
 
-    setTimeout(() => {
-        console.log('ENDING WATCH STREAM...');
+    // watch a stream of changes related to database hosts
+    stream = core.ns.endpoints
+        .matchLabels({ role: 'host' })
+        .getStream({ qs: { watch: true } });
+    stream.pipe(jsonStream);
+    jsonStream.on('data', watchStream);
+
+    // every 5 minutes, restart the watch....
+    setInterval(() => {
+        console.log('RESTARTING WATCH STREAM...');
         stream.abort();
-        process.exit(0);
-    }, 1500000);
+        const jsonStream = new JSONStream();
+        stream = core.ns.endpoints
+            .matchLabels({ role: 'host' })
+            .getStream({ qs: { watch: true } });
+        stream.pipe(jsonStream);
+        jsonStream.on('data', watchStream);
+    }, 300000);
 
 });
 
