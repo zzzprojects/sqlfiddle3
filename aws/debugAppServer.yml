@@ -1,9 +1,0 @@
-version: '2'
-services:
-  appServer:
-    image: "$ECR_URI:appServer"
-    extra_hosts:
-     - "appDatabase:$APP_DATABASE_IP"
-    mem_reservation: 256m
-    environment:
-      - VERTX_OPTS=-Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=n,address=5005 -Dvertx.disableFileCaching=true -Dvertx.disableFileCPResolving=true

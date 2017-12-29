@@ -1,6 +1,0 @@
-version: '2'
-services:
-  mssql2017Host:
-    image: "$ECR_URI:mssql2017Host"
-    ports:
-    - "0:1433"

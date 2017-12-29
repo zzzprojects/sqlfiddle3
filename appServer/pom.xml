@@ -96,21 +96,6 @@
                     </resources>
                   </configuration>
                 </execution>
-                <execution>
-                  <id>default-cli</id>
-                  <phase>validate</phase>
-                  <goals>
-                    <goal>copy-resources</goal>
-                  </goals>
-                  <configuration>
-                    <outputDirectory>${basedir}/target/lambda</outputDirectory>
-                    <resources>
-                      <resource>
-                        <directory>src/main/lambda</directory>
-                      </resource>
-                    </resources>
-                  </configuration>
-                </execution>
               </executions>
             </plugin>
 
@@ -152,17 +137,6 @@
                         <goals>
                             <goal>npm</goal>
                         </goals>
-                    </execution>
-
-                    <execution>
-                        <id>npm-install-lambda-dependencies</id>
-                        <goals>
-                            <goal>npm</goal>
-                        </goals>
-                        <phase>process-resources</phase>
-                        <configuration>
-                            <workingDirectory>target/lambda</workingDirectory>
-                        </configuration>
                     </execution>
 
                     <execution>
@@ -210,25 +184,6 @@
                     </resource>
                 </resources>
                 </configuration>
-            </plugin>
-
-            <plugin>
-                <artifactId>maven-assembly-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <!-- execute individually with  mvn resources:copy-resources && mvn assembly:single -->
-                        <id>default-cli</id>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>single</goal>
-                        </goals>
-                        <configuration>
-                            <descriptors>
-                                <descriptor>src/main/lambda/assembly.xml</descriptor>
-                            </descriptors>
-                        </configuration>
-                    </execution>
-                </executions>
             </plugin>
         </plugins>
     </build>

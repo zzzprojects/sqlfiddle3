@@ -1,6 +1,0 @@
-version: '2'
-services:
-  mysql56Host:
-    image: "$ECR_URI:mysql56Host"
-    ports:
-    - "0:3306"
