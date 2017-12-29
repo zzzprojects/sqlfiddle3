@@ -15,32 +15,46 @@ To get running locally, first start minikube with a 8GB VM and configure docker 
 
     minikube start --insecure-registry 10.0.0.0/24 --memory 8192
     eval $(minikube docker-env)
+    kubectl create namespace sqlfiddle
 
 Once your minikube environment is prepared, you can build SQL Fiddle within it using these commands:
 
-    (cd appServer/; mvn clean package)
     docker build -t sqlfiddle:varnish varnish
     docker build -t sqlfiddle:appDatabase appDatabase
+    kubectl --namespace sqlfiddle apply -f kubernetes/appdatabase.yml
     docker build -t sqlfiddle:hostMonitor hostMonitor
-    docker build -t sqlfiddle:postgresql96Host postgresql96Host
-    docker build -t sqlfiddle:postgresql93Host postgresql93Host
+    kubectl --namespace sqlfiddle apply -f kubernetes/hostmonitor.yml
+
+You can then choose which host databases you would like to work with, using any of these command pairs:
+
     docker build -t sqlfiddle:mysql56Host mysql56Host
+    kubectl --namespace sqlfiddle apply -f kubernetes/mysql56.yml
+
+    docker build -t sqlfiddle:postgresql96Host postgresql96Host
+    kubectl --namespace sqlfiddle apply -f kubernetes/postgresql96.yml
+
+    docker build -t sqlfiddle:postgresql93Host postgresql93Host    
+    kubectl --namespace sqlfiddle apply -f kubernetes/postgresql93.yml
+
     docker build -t sqlfiddle:mssql2017Host mssql2017Host
-    docker build -t sqlfiddle:oracle11gHost oracle11gHost --shm-size 1G
-    kubectl create namespace sqlfiddle
-    kubectl --namespace sqlfiddle apply -f kubernetes
+    kubectl --namespace sqlfiddle apply -f kubernetes/mssql201.yml
 
-After you run the above command, you can open the site by visiting http://localhost:8080 . This port exposes the app via the varnish cache server.
-
-### Optional: Oracle 11g R2 XE
-
-If you want to include Oracle in your environment, you have to do some manual steps before you run the above commands (thanks Oracle!):
+If you want to include Oracle in your environment, you have to do some manual steps (thanks Oracle!):
 
 1) Download ojdbc6.jar from http://www.oracle.com/technetwork/database/enterprise-edition/jdbc-112010-090769.html
-2) mkdir appServer/src/main/verticles/lib/ && cp ojdbc6.jar appServer/src/main/verticles/lib/
+2) `mkdir appServer/src/main/verticles/lib/ && cp ojdbc6.jar appServer/src/main/verticles/lib/`
 3) Download oracle-xe-11.2.0-1.0.x86_64.rpm.zip from http://www.oracle.com/technetwork/database/database-technologies/express-edition/downloads/index.html
-4) cp oracle-xe-11.2.0-1.0.x86_64.rpm.zip oracle11gHost
+4) `cp oracle-xe-11.2.0-1.0.x86_64.rpm.zip oracle11gHost`
 
+Afterwards, run these commands:
+
+    docker build -t sqlfiddle:oracle11gHost oracle11gHost
+    kubectl --namespace sqlfiddle apply -f kubernetes/oracle11g.yml
+
+Finally, build the app server:
+
+    (cd appServer/; mvn clean package)
+    kubectl --namespace sqlfiddle apply -f kubernetes/appservers.yml
 
 ## To do development in a local environment, start with above and then:
 
