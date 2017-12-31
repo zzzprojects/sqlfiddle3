@@ -19,7 +19,17 @@ spec:
               protocol: TCP
           resources:
               requests:
-                memory: "512Mi"
+                memory: "1024Mi"
+          env:
+            - name: VERTX_OPTS
+              value: "-XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/tmp -Xmx960m -Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=n,address=5005 -Dvertx.disableFileCaching=true -Dvertx.disableFileCPResolving=true"
+          readinessProbe:
+            httpGet:
+              path: /backend/dbTypes
+              port: 8081
+            initialDelaySeconds: 5
+            timeoutSeconds: 2
+            periodSeconds: 20
         - image: sqlfiddle:varnish
           imagePullPolicy: IfNotPresent
           name: varnish
