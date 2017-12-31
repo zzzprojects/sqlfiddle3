@@ -460,8 +460,9 @@ ALTER TABLE ONLY schema_defs
 -- Name: host_ref; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
---ALTER TABLE ONLY schema_defs
---    ADD CONSTRAINT host_ref FOREIGN KEY (current_host_id) REFERENCES hosts(id);
+ALTER TABLE ONLY schema_defs
+    ADD CONSTRAINT host_ref FOREIGN KEY (current_host_id) REFERENCES hosts(id)
+    ON DELETE SET NULL;
 
 
 --
