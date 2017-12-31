@@ -26,32 +26,33 @@ client.connect(function (err) {
     const JSONStream = require('json-stream');
 
     const core = new Api.Core(Api.config.getInCluster());
+    const ext = new Api.Extensions(Api.config.getInCluster());
+
     const jsonStream = new JSONStream();
     var stream;
 
     var watchStream = (endpoint) => {
+        console.log(new Date());
         console.log(JSON.stringify(endpoint, null, 4));
 
         var hostType = endpoint.object.metadata.name,
             runningSubsets = (endpoint.object.subsets || [])
                 .filter((subset) => !!subset.addresses),
-            runningHosts = [],
-            hostTemplate = getHostTemplate(hostType);
-
-        if (runningSubsets.length) {
-            runningHosts = runningSubsets[0]
-                .addresses
-                .map((hostAddress) => ({
-                    ip: hostAddress.ip,
-                    port: (runningSubsets[0]
-                            .ports
-                            .filter((port) =>
-                                port.name === "database"
-                            )[0] || {}).port,
-                    connection_meta:  hostAddress.targetRef.uid
-                })
-            );
-        }
+            notReadySubsets = (endpoint.object.subsets || [])
+                .filter((subset) => !!subset.notReadyAddresses),
+            hostTemplate = getHostTemplate(hostType),
+            subsetsToHosts = (subsets, prop) =>
+                subsets.length ? subsets[0][prop]
+                    .map((hostAddress) => getHostTemplate(
+                        hostType,
+                        hostAddress.ip,
+                        (subsets[0]
+                                .ports
+                                .filter((port) =>
+                                    port.name === "database"
+                                )[0] || {}).port,
+                        hostAddress.targetRef.uid
+                    )) : [];
 
         if (hostTemplate) {
             getCurrentHostsByFullName(client, hostTemplate.full_name)
@@ -63,22 +64,48 @@ client.connect(function (err) {
                             return result;
                         }, {}
                     ),
-                    desiredHosts = runningHosts.map(
-                        (runningHost) => getHostTemplate(
-                            hostType,
-                            runningHost.ip,
-                            runningHost.port,
-                            runningHost.connection_meta
-                        )
-                    ),
-                    promises = [];
+                    desiredHosts = subsetsToHosts(runningSubsets, 'addresses'),
+                    notReadyHosts = subsetsToHosts(notReadySubsets, 'notReadyAddresses');
+
+                console.log("REGISTERED HOSTS:")
+                console.log(JSON.stringify(registeredHosts, null, 4));
+                console.log("DESIRED HOSTS:")
+                console.log(JSON.stringify(desiredHosts, null, 4));
+                console.log("NOT READY HOSTS:")
+                console.log(JSON.stringify(notReadyHosts, null, 4));
 
                 desiredHosts.forEach((host) => {
                     if (!registeredHosts[host.jdbc_url_template]) {
                         // if we don't have a registration entry for this host, save it in the repo.
-                        promises.push(addHost(client, host));
+                        addHost(client, host);
                     } else {
                         // if we do have a registration entry, clear it.
+                        delete registeredHosts[host.jdbc_url_template];
+                    }
+                });
+
+                notReadyHosts.forEach((host) => {
+                    if (registeredHosts[host.jdbc_url_template]) {
+
+                        if (registeredHosts[host.jdbc_url_template].pending_removal) {
+
+                            // if we have a ready host, then we can safely scale down the replicas to remove this unready one
+                            if (desiredHosts.length) {
+                                deleteHost(client, registeredHosts[host.jdbc_url_template])
+                                    .then(() => scale(ext, hostType, 1));
+                            }
+
+                        } else {
+
+                            // if we a registration entry for this not ready host, mark it for removal and add another replica
+                            markHostForRemoval(client, registeredHosts[host.jdbc_url_template]).then(
+                                () => scale(ext, hostType, 2)
+                            );
+
+                        }
+
+                        // since we do have a registration entry for this not ready host,
+                        // clear it now so that it isn't removed below.
                         delete registeredHosts[host.jdbc_url_template];
                     }
                 });
@@ -86,10 +113,9 @@ client.connect(function (err) {
                 // any remaining registeredHosts entries must be stale; remove them
                 Object.keys(registeredHosts).forEach((key) => {
                     var staleHost = registeredHosts[key];
-                    promises.push(deleteHost(client, staleHost));
+                    deleteHost(client, staleHost);
                 });
 
-                return Q.all(promises);
             });
         }
     }
@@ -115,6 +141,15 @@ client.connect(function (err) {
 
 });
 
+
+var scale = (ext, hostType, replicas) =>
+    ext.ns.rs(hostType.replace('-service', '')).patch({
+          body:  { spec: { replicas: replicas } }
+        },
+        (err, result) => console.log(JSON.stringify(err || result, null, 4))
+    );
+
+
 var getCurrentHostsByFullName = (client, full_name) =>
     client.query({ text: `
         SELECT
@@ -130,6 +165,19 @@ var getCurrentHostsByFullName = (client, full_name) =>
           full_name
       ]
     });
+
+var markHostForRemoval = (client, host) =>
+    client.query({text: `
+        UPDATE
+            hosts
+        SET
+            pending_removal = TRUE
+        WHERE
+            id = $1
+    `,
+    values: [
+        host.id
+    ]});
 
 // ipAddress, port and connection_meta are optional
 var getHostTemplate = (hostType, ipAddress, port, connection_meta) => {
@@ -208,16 +256,12 @@ var addHost = (client, host) => {
 
 var deleteHost = (client, host) => {
     return client.query({text: `
-        UPDATE
-            schema_defs
-        SET
-            current_host_id = null
-        WHERE
-            current_host_id = ${host.id};
-
         DELETE FROM
             hosts
         WHERE
-            id = ${host.id}
-    `});
+            id = $1
+    `,
+    values: [
+        host.id
+    ]});
 };

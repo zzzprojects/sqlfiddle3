@@ -3,7 +3,7 @@ kind: ReplicaSet
 metadata:
   name: oracle11g
 spec:
-  replicas: 2
+  replicas: 1
   template:
     metadata:
       labels:
@@ -30,16 +30,9 @@ spec:
             exec:
               command:
                 - "/ready.sh"
-            initialDelaySeconds: 20
-            timeoutSeconds: 5
-            periodSeconds: 10
-          livenessProbe:
-            exec:
-              command:
-                - "/live.sh"
             initialDelaySeconds: 30
             timeoutSeconds: 5
-            periodSeconds: 180
+            periodSeconds: 10
 ---
 kind: Service
 apiVersion: v1

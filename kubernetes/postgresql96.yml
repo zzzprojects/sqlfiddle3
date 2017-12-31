@@ -3,7 +3,7 @@ kind: ReplicaSet
 metadata:
   name: postgresql96
 spec:
-  replicas: 2
+  replicas: 1
   template:
     metadata:
       labels:
@@ -18,7 +18,7 @@ spec:
               protocol: TCP
           resources:
               requests:
-                memory: "256Mi"
+                memory: "512Mi"
           readinessProbe:
             exec:
               command:
@@ -26,13 +26,6 @@ spec:
             initialDelaySeconds: 5
             timeoutSeconds: 5
             periodSeconds: 10
-          livenessProbe:
-            exec:
-              command:
-                - "/live.sh"
-            initialDelaySeconds: 5
-            timeoutSeconds: 5
-            periodSeconds: 60
 ---
 kind: Service
 apiVersion: v1

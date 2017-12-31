@@ -81,7 +81,6 @@ RUN yum -y install unzip libaio bc initscripts net-tools openssl && \
     chmod ug+x $ORACLE_BASE/*.sh
 
 COPY initdb.d /docker-entrypoint-initdb.d
-COPY live.sh /
 COPY ready.sh /
 
 #VOLUME ["$ORACLE_BASE/oradata"]
