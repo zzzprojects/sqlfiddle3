@@ -1,0 +1,319 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jmeterTestPlan version="1.2" properties="2.6" jmeter="2.11.20151206">
+  <hashTree>
+    <TestPlan guiclass="TestPlanGui" testclass="TestPlan" testname="Test Plan" enabled="true">
+      <stringProp name="TestPlan.comments"></stringProp>
+      <boolProp name="TestPlan.functional_mode">false</boolProp>
+      <boolProp name="TestPlan.serialize_threadgroups">false</boolProp>
+      <elementProp name="TestPlan.user_defined_variables" elementType="Arguments" guiclass="ArgumentsPanel" testclass="Arguments" testname="User Defined Variables" enabled="true">
+        <collectionProp name="Arguments.arguments"/>
+      </elementProp>
+      <stringProp name="TestPlan.user_define_classpath"></stringProp>
+    </TestPlan>
+    <hashTree>
+      <ConfigTestElement guiclass="HttpDefaultsGui" testclass="ConfigTestElement" testname="Minikube host ip" enabled="true">
+        <elementProp name="HTTPsampler.Arguments" elementType="Arguments" guiclass="HTTPArgumentsPanel" testclass="Arguments" testname="User Defined Variables" enabled="true">
+          <collectionProp name="Arguments.arguments"/>
+        </elementProp>
+        <stringProp name="HTTPSampler.domain">192.168.99.100</stringProp>
+        <stringProp name="HTTPSampler.port">80</stringProp>
+        <stringProp name="HTTPSampler.connect_timeout"></stringProp>
+        <stringProp name="HTTPSampler.response_timeout"></stringProp>
+        <stringProp name="HTTPSampler.protocol"></stringProp>
+        <stringProp name="HTTPSampler.contentEncoding"></stringProp>
+        <stringProp name="HTTPSampler.path"></stringProp>
+        <stringProp name="HTTPSampler.concurrentPool">4</stringProp>
+      </ConfigTestElement>
+      <hashTree/>
+      <ThreadGroup guiclass="ThreadGroupGui" testclass="ThreadGroup" testname="SQL Fiddle Users" enabled="true">
+        <stringProp name="ThreadGroup.on_sample_error">startnextloop</stringProp>
+        <elementProp name="ThreadGroup.main_controller" elementType="LoopController" guiclass="LoopControlPanel" testclass="LoopController" testname="Loop Controller" enabled="true">
+          <boolProp name="LoopController.continue_forever">false</boolProp>
+          <intProp name="LoopController.loops">-1</intProp>
+        </elementProp>
+        <stringProp name="ThreadGroup.num_threads">10</stringProp>
+        <stringProp name="ThreadGroup.ramp_time">1</stringProp>
+        <longProp name="ThreadGroup.start_time">1514572517000</longProp>
+        <longProp name="ThreadGroup.end_time">1514572517000</longProp>
+        <boolProp name="ThreadGroup.scheduler">false</boolProp>
+        <stringProp name="ThreadGroup.duration"></stringProp>
+        <stringProp name="ThreadGroup.delay"></stringProp>
+      </ThreadGroup>
+      <hashTree>
+        <RandomVariableConfig guiclass="TestBeanGUI" testclass="RandomVariableConfig" testname="Generate random table number" enabled="true">
+          <stringProp name="maximumValue">9999</stringProp>
+          <stringProp name="minimumValue">1</stringProp>
+          <stringProp name="outputFormat">TABLE_0000</stringProp>
+          <boolProp name="perThread">true</boolProp>
+          <stringProp name="randomSeed"></stringProp>
+          <stringProp name="variableName">randTable</stringProp>
+        </RandomVariableConfig>
+        <hashTree/>
+        <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="Check available database types" enabled="true">
+          <elementProp name="HTTPsampler.Arguments" elementType="Arguments" guiclass="HTTPArgumentsPanel" testclass="Arguments" testname="User Defined Variables" enabled="true">
+            <collectionProp name="Arguments.arguments"/>
+          </elementProp>
+          <stringProp name="HTTPSampler.domain"></stringProp>
+          <stringProp name="HTTPSampler.port"></stringProp>
+          <stringProp name="HTTPSampler.connect_timeout"></stringProp>
+          <stringProp name="HTTPSampler.response_timeout"></stringProp>
+          <stringProp name="HTTPSampler.protocol"></stringProp>
+          <stringProp name="HTTPSampler.contentEncoding"></stringProp>
+          <stringProp name="HTTPSampler.path">/backend/dbTypes</stringProp>
+          <stringProp name="HTTPSampler.method">GET</stringProp>
+          <boolProp name="HTTPSampler.follow_redirects">false</boolProp>
+          <boolProp name="HTTPSampler.auto_redirects">false</boolProp>
+          <boolProp name="HTTPSampler.use_keepalive">false</boolProp>
+          <boolProp name="HTTPSampler.DO_MULTIPART_POST">false</boolProp>
+          <boolProp name="HTTPSampler.monitor">false</boolProp>
+          <stringProp name="HTTPSampler.embedded_url_re"></stringProp>
+        </HTTPSamplerProxy>
+        <hashTree>
+          <JSR223Assertion guiclass="TestBeanGUI" testclass="JSR223Assertion" testname="Oracle available" enabled="true">
+            <stringProp name="scriptLanguage">nashorn</stringProp>
+            <stringProp name="parameters"></stringProp>
+            <stringProp name="filename"></stringProp>
+            <stringProp name="cacheKey"></stringProp>
+            <stringProp name="script">(function () {
+	if (prev.getResponseCode() !== &quot;200&quot;) {
+		AssertionResult.setFailureMessage(&quot;Unexpected response code: &quot; + prev.getResponseCode());
+		AssertionResult.setFailure(true);
+		return;
+	}
+	
+	try {
+		var responseObj = JSON.parse(prev.getResponseDataAsString());
+		var dbType = responseObj.result.filter(function (type) {
+			return (type.full_name === &quot;Oracle 11g R2&quot;);
+		});
+
+		if (dbType.length) {
+			vars.put(&apos;db_type_id&apos;, dbType[0].db_type_id);
+		} else {
+			AssertionResult.setFailureMessage(&quot;did not see Oracle in response&quot;)
+			AssertionResult.setFailure(true)
+			return;
+		}
+		
+	} catch (e) {
+		AssertionResult.setFailureMessage(&quot;Unexpected exception: &quot; + e)
+		AssertionResult.setFailure(true)
+	}
+}());</stringProp>
+          </JSR223Assertion>
+          <hashTree/>
+        </hashTree>
+        <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="Create schema" enabled="true">
+          <boolProp name="HTTPSampler.postBodyRaw">true</boolProp>
+          <elementProp name="HTTPsampler.Arguments" elementType="Arguments">
+            <collectionProp name="Arguments.arguments">
+              <elementProp name="" elementType="HTTPArgument">
+                <boolProp name="HTTPArgument.always_encode">false</boolProp>
+                <stringProp name="Argument.value">{&#xd;
+    &quot;statement_separator&quot;: &quot;;&quot;,&#xd;
+    &quot;db_type_id&quot;: ${db_type_id},&#xd;
+    &quot;ddl&quot;: &quot;\n\nCREATE TABLE ${randTable}\n    (\&quot;a\&quot; int, \&quot;b\&quot; int, \&quot;c\&quot; int)\n;\n\nINSERT ALL \n    INTO ${randTable} (\&quot;a\&quot;, \&quot;b\&quot;, \&quot;c\&quot;)\n         VALUES (1, 2, 3)\nSELECT * FROM dual\n;&quot;&#xd;
+}</stringProp>
+                <stringProp name="Argument.metadata">=</stringProp>
+              </elementProp>
+            </collectionProp>
+          </elementProp>
+          <stringProp name="HTTPSampler.domain"></stringProp>
+          <stringProp name="HTTPSampler.port"></stringProp>
+          <stringProp name="HTTPSampler.connect_timeout"></stringProp>
+          <stringProp name="HTTPSampler.response_timeout"></stringProp>
+          <stringProp name="HTTPSampler.protocol"></stringProp>
+          <stringProp name="HTTPSampler.contentEncoding"></stringProp>
+          <stringProp name="HTTPSampler.path">/backend/createSchema?_action=create</stringProp>
+          <stringProp name="HTTPSampler.method">POST</stringProp>
+          <boolProp name="HTTPSampler.follow_redirects">false</boolProp>
+          <boolProp name="HTTPSampler.auto_redirects">false</boolProp>
+          <boolProp name="HTTPSampler.use_keepalive">false</boolProp>
+          <boolProp name="HTTPSampler.DO_MULTIPART_POST">false</boolProp>
+          <boolProp name="HTTPSampler.monitor">false</boolProp>
+          <stringProp name="HTTPSampler.embedded_url_re"></stringProp>
+        </HTTPSamplerProxy>
+        <hashTree>
+          <JSR223Assertion guiclass="TestBeanGUI" testclass="JSR223Assertion" testname="Assert table name in schema" enabled="true">
+            <stringProp name="TestPlan.comments">Also gets the short code for later queries</stringProp>
+            <stringProp name="cacheKey"></stringProp>
+            <stringProp name="filename"></stringProp>
+            <stringProp name="parameters"></stringProp>
+            <stringProp name="script">(function () {
+	if (prev.getResponseCode() !== &quot;200&quot;) {
+		AssertionResult.setFailureMessage(&quot;Unexpected response code: &quot; + prev.getResponseCode());
+		AssertionResult.setFailure(true);
+		return;
+	}
+	
+	try {
+		var responseObj = JSON.parse(prev.getResponseDataAsString());
+		var expectedTableName = vars.get(&apos;randTable&apos;);
+
+		if (responseObj.short_code) {
+			vars.put(&apos;short_code&apos;, responseObj.short_code);
+		} else {
+			AssertionResult.setFailureMessage(&quot;did not see short code in response&quot;)
+			AssertionResult.setFailure(true)
+			return;
+		}
+		
+		if (responseObj.schema_structure.filter(function (t) {
+				return t.table_name === expectedTableName;
+			}).length !== 1) {
+	
+			AssertionResult.setFailureMessage(&quot;did not see table name in schema structure&quot;)
+			AssertionResult.setFailure(true)
+			return;
+	
+		}
+
+		
+	} catch (e) {
+		AssertionResult.setFailureMessage(&quot;Unexpected exception: &quot; + e)
+		AssertionResult.setFailure(true)
+	}
+}());</stringProp>
+            <stringProp name="scriptLanguage">nashorn</stringProp>
+          </JSR223Assertion>
+          <hashTree/>
+          <ResultAction guiclass="ResultActionGui" testclass="ResultAction" testname="Failure handler" enabled="true">
+            <intProp name="OnError.action">4</intProp>
+          </ResultAction>
+          <hashTree/>
+        </hashTree>
+        <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="Execute query" enabled="true">
+          <boolProp name="HTTPSampler.postBodyRaw">true</boolProp>
+          <elementProp name="HTTPsampler.Arguments" elementType="Arguments">
+            <collectionProp name="Arguments.arguments">
+              <elementProp name="" elementType="HTTPArgument">
+                <boolProp name="HTTPArgument.always_encode">false</boolProp>
+                <stringProp name="Argument.value">{&#xd;
+    &quot;db_type_id&quot;: ${db_type_id},&#xd;
+    &quot;schema_short_code&quot;: &quot;${short_code}&quot;,&#xd;
+    &quot;statement_separator&quot;: &quot;;&quot;,&#xd;
+    &quot;sql&quot;: &quot;SELECT * FROM ${randTable};\n\nINSERT INTO ${randTable} (\&quot;a\&quot;,\&quot;b\&quot;,\&quot;c\&quot;) VALUES (4,5,6);\n\nUPDATE ${randTable} SET \&quot;a\&quot; = \&quot;a\&quot; + 1;\n\nSELECT * FROM ${randTable};\n\nDELETE FROM ${randTable};&quot;&#xd;
+}</stringProp>
+                <stringProp name="Argument.metadata">=</stringProp>
+              </elementProp>
+            </collectionProp>
+          </elementProp>
+          <stringProp name="HTTPSampler.domain"></stringProp>
+          <stringProp name="HTTPSampler.port"></stringProp>
+          <stringProp name="HTTPSampler.connect_timeout"></stringProp>
+          <stringProp name="HTTPSampler.response_timeout"></stringProp>
+          <stringProp name="HTTPSampler.protocol"></stringProp>
+          <stringProp name="HTTPSampler.contentEncoding"></stringProp>
+          <stringProp name="HTTPSampler.path">/backend/executeQuery?_action=query</stringProp>
+          <stringProp name="HTTPSampler.method">POST</stringProp>
+          <boolProp name="HTTPSampler.follow_redirects">false</boolProp>
+          <boolProp name="HTTPSampler.auto_redirects">false</boolProp>
+          <boolProp name="HTTPSampler.use_keepalive">false</boolProp>
+          <boolProp name="HTTPSampler.DO_MULTIPART_POST">false</boolProp>
+          <boolProp name="HTTPSampler.monitor">false</boolProp>
+          <stringProp name="HTTPSampler.embedded_url_re"></stringProp>
+        </HTTPSamplerProxy>
+        <hashTree>
+          <JSR223Assertion guiclass="TestBeanGUI" testclass="JSR223Assertion" testname="Assert correct query response" enabled="true">
+            <stringProp name="scriptLanguage">nashorn</stringProp>
+            <stringProp name="parameters"></stringProp>
+            <stringProp name="filename"></stringProp>
+            <stringProp name="cacheKey"></stringProp>
+            <stringProp name="script">(function () {
+	if (prev.getResponseCode() !== &quot;200&quot;) {
+		AssertionResult.setFailureMessage(&quot;Unexpected response code: &quot; + prev.getResponseCode());
+		AssertionResult.setFailure(true);
+		return;
+	}
+	
+	try {
+		var responseObj = JSON.parse(prev.getResponseDataAsString());
+		var expectedTableName = vars.get(&apos;randTable&apos;);
+		
+		if (responseObj.sets.length !== 5) {
+			AssertionResult.setFailureMessage(&quot;did not see expected number of result sets (5)&quot;)
+			AssertionResult.setFailure(true)
+			return;
+		}
+
+		
+	} catch (e) {
+		AssertionResult.setFailureMessage(&quot;Unexpected exception: &quot; + e)
+		AssertionResult.setFailure(true)
+	}
+}());</stringProp>
+          </JSR223Assertion>
+          <hashTree/>
+          <ResultAction guiclass="ResultActionGui" testclass="ResultAction" testname="Failure handler" enabled="true">
+            <intProp name="OnError.action">4</intProp>
+          </ResultAction>
+          <hashTree/>
+        </hashTree>
+        <ResultCollector guiclass="GraphVisualizer" testclass="ResultCollector" testname="Graph Results" enabled="true">
+          <boolProp name="ResultCollector.error_logging">false</boolProp>
+          <objProp>
+            <name>saveConfig</name>
+            <value class="SampleSaveConfiguration">
+              <time>true</time>
+              <latency>true</latency>
+              <timestamp>true</timestamp>
+              <success>true</success>
+              <label>true</label>
+              <code>true</code>
+              <message>true</message>
+              <threadName>true</threadName>
+              <dataType>true</dataType>
+              <encoding>false</encoding>
+              <assertions>true</assertions>
+              <subresults>true</subresults>
+              <responseData>false</responseData>
+              <samplerData>false</samplerData>
+              <xml>false</xml>
+              <fieldNames>false</fieldNames>
+              <responseHeaders>false</responseHeaders>
+              <requestHeaders>false</requestHeaders>
+              <responseDataOnError>false</responseDataOnError>
+              <saveAssertionResultsFailureMessage>false</saveAssertionResultsFailureMessage>
+              <assertionsResultsToSave>0</assertionsResultsToSave>
+              <bytes>true</bytes>
+            </value>
+          </objProp>
+          <stringProp name="filename"></stringProp>
+        </ResultCollector>
+        <hashTree/>
+        <ResultCollector guiclass="AssertionVisualizer" testclass="ResultCollector" testname="Assertion Results" enabled="true">
+          <boolProp name="ResultCollector.error_logging">true</boolProp>
+          <objProp>
+            <name>saveConfig</name>
+            <value class="SampleSaveConfiguration">
+              <time>true</time>
+              <latency>true</latency>
+              <timestamp>true</timestamp>
+              <success>true</success>
+              <label>true</label>
+              <code>true</code>
+              <message>true</message>
+              <threadName>true</threadName>
+              <dataType>true</dataType>
+              <encoding>false</encoding>
+              <assertions>true</assertions>
+              <subresults>true</subresults>
+              <responseData>false</responseData>
+              <samplerData>false</samplerData>
+              <xml>false</xml>
+              <fieldNames>false</fieldNames>
+              <responseHeaders>false</responseHeaders>
+              <requestHeaders>false</requestHeaders>
+              <responseDataOnError>false</responseDataOnError>
+              <saveAssertionResultsFailureMessage>false</saveAssertionResultsFailureMessage>
+              <assertionsResultsToSave>0</assertionsResultsToSave>
+              <bytes>true</bytes>
+            </value>
+          </objProp>
+          <stringProp name="filename"></stringProp>
+        </ResultCollector>
+        <hashTree/>
+      </hashTree>
+    </hashTree>
+  </hashTree>
+</jmeterTestPlan>

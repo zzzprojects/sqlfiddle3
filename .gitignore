@@ -5,3 +5,4 @@ appServer/target
 .vagrant
 node_modules
 *.zip
+jmeter.log
