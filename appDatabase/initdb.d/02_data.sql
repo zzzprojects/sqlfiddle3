@@ -719,6 +719,28 @@ GO
 GRANT ALTER ON SCHEMA::dbo TO user_#databaseName#;
 GO
 
+-- Eval-SQL support:
+sp_configure ''clr enabled'', 1;
+GO
+RECONFIGURE;
+GO
+
+CREATE ASSEMBLY [#databaseName#.Z.Expressions.Compiler] AUTHORIZATION [dbo] FROM ''/tmp/z_expressions_compiler.so'' WITH PERMISSION_SET = SAFE;
+
+CREATE ASSEMBLY [#databaseName#.Z.Expressions.SqlServer.Eval] AUTHORIZATION [dbo] FROM ''/tmp/z_expressions_sqlserver_eval.so'' WITH PERMISSION_SET = SAFE;
+
+CREATE TYPE [dbo].[SQLNET] EXTERNAL NAME [#databaseName#.Z.Expressions.SqlServer.Eval].[Z.Expressions.SqlServer.Eval.SQLNET];
+
+EXEC(''CREATE PROCEDURE [SQLNET_EvalResultSet] @sqlnet [SQLNET] AS EXTERNAL NAME [#databaseName#.Z.Expressions.SqlServer.Eval].[Z.Expressions.SqlServer.Eval.SQLNET].[SQLNET_EvalResultSet]'')
+EXEC(''CREATE FUNCTION [dbo].[SQLNET_EvalTVF_1] (@sqlnet [dbo].[SQLNET]) RETURNS TABLE ([Value_1] SQL_VARIANT NULL) AS EXTERNAL NAME [#databaseName#.Z.Expressions.SqlServer.Eval].[Z.Expressions.SqlServer.Eval.SQLNET].[SQLNET_EvalTVF_1]'')
+EXEC(''CREATE FUNCTION [dbo].[SQLNET_EvalTVF_2] (@sqlnet [dbo].[SQLNET]) RETURNS TABLE ([Value_1] SQL_VARIANT NULL, [Value_2] SQL_VARIANT NULL) AS EXTERNAL NAME [#databaseName#.Z.Expressions.SqlServer.Eval].[Z.Expressions.SqlServer.Eval.SQLNET].[SQLNET_EvalTVF_2]'')
+EXEC(''CREATE FUNCTION [dbo].[SQLNET_EvalTVF_3] (@sqlnet [dbo].[SQLNET]) RETURNS TABLE ([Value_1] SQL_VARIANT NULL, [Value_2] SQL_VARIANT NULL, [Value_3] SQL_VARIANT NULL) AS EXTERNAL NAME [#databaseName#.Z.Expressions.SqlServer.Eval].[Z.Expressions.SqlServer.Eval.SQLNET].[SQLNET_EvalTVF_3]'')
+EXEC(''CREATE FUNCTION [dbo].[SQLNET_EvalTVF_4] (@sqlnet [dbo].[SQLNET]) RETURNS TABLE ([Value_1] SQL_VARIANT NULL, [Value_2] SQL_VARIANT NULL, [Value_3] SQL_VARIANT NULL, [Value_4] SQL_VARIANT NULL) AS EXTERNAL NAME [#databaseName#.Z.Expressions.SqlServer.Eval].[Z.Expressions.SqlServer.Eval.SQLNET].[SQLNET_EvalTVF_4]'')
+EXEC(''CREATE FUNCTION [dbo].[SQLNET_EvalTVF_5] (@sqlnet [dbo].[SQLNET]) RETURNS TABLE ([Value_1] SQL_VARIANT NULL, [Value_2] SQL_VARIANT NULL, [Value_3] SQL_VARIANT NULL, [Value_4] SQL_VARIANT NULL, [Value_5] SQL_VARIANT NULL) AS EXTERNAL NAME [#databaseName#.Z.Expressions.SqlServer.Eval].[Z.Expressions.SqlServer.Eval.SQLNET].[SQLNET_EvalTVF_5]'')
+EXEC(''CREATE FUNCTION [dbo].[SQLNET_EvalTVF_String] (@sqlnet [dbo].[SQLNET]) RETURNS TABLE ( [Value_1] NVARCHAR (MAX) NULL) AS EXTERNAL NAME [#databaseName#.Z.Expressions.SqlServer.Eval].[Z.Expressions.SqlServer.Eval.SQLNET].[SQLNET_EvalTVF_String]'')
+
+GO
+
 use master;
 
 ', 'net.sourceforge.jtds.jdbc.Driver', 'exec dbo.clearDBUsers ''db_#databaseName#'';
@@ -1957,4 +1979,3 @@ SELECT pg_catalog.setval('schema_defs_id_seq', 46, true);
 --
 -- PostgreSQL database dump complete
 --
-
