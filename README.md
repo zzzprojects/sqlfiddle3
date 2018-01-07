@@ -72,8 +72,8 @@ You will need to have `kubectl` installed before running these commands. If you 
 Once the container images are available to Kubernetes (from the above steps), run these commands to start up the SQL Fiddle services:
 
     kubectl create namespace sqlfiddle
-    kubectl --namespace sqlfiddle apply -f kubernetes/appservers.yml
     kubectl --namespace sqlfiddle apply -f kubernetes/appdatabase.yml
+    kubectl --namespace sqlfiddle apply -f kubernetes/appservers.yml
     kubectl --namespace sqlfiddle apply -f kubernetes/hostmonitor.yml
 
 You can then choose which host databases you would like to work with, using any of these commands:
