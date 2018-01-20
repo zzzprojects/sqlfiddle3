@@ -1,18 +1,19 @@
 apiVersion: extensions/v1beta1
 kind: ReplicaSet
 metadata:
-  name: postgresql96
+  namespace: sqlfiddle
+  name: postgresql93
 spec:
   replicas: 1
   template:
     metadata:
       labels:
-        type: postgresql96
+        type: postgresql93
     spec:
       containers:
-        - image: sqlfiddle:postgresql96Host
+        - image: {{ .Values.registryPrefix }}/sqlfiddle:postgresql93Host
           imagePullPolicy: IfNotPresent
-          name: postgresql96
+          name: postgresql93
           ports:
             - containerPort: 5432
               protocol: TCP
@@ -30,7 +31,8 @@ spec:
 kind: Service
 apiVersion: v1
 metadata:
-  name: postgresql96-service
+  namespace: sqlfiddle
+  name: postgresql93-service
   labels:
     role: host
 spec:
@@ -39,4 +41,4 @@ spec:
     - port: 5432
       name: database
   selector:
-    type: postgresql96
+    type: postgresql93

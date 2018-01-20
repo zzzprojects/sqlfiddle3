@@ -1,6 +1,7 @@
 apiVersion: extensions/v1beta1
 kind: ReplicaSet
 metadata:
+  namespace: sqlfiddle
   name: oracle11g
 spec:
   replicas: 1
@@ -14,7 +15,7 @@ spec:
         emptyDir:
           medium: Memory
       containers:
-        - image: sqlfiddle:oracle11gHost
+        - image: {{ .Values.registryPrefix }}/sqlfiddle:oracle11gHost
           imagePullPolicy: IfNotPresent
           name: oracle11g
           ports:
@@ -37,6 +38,7 @@ spec:
 kind: Service
 apiVersion: v1
 metadata:
+  namespace: sqlfiddle
   name: oracle11g-service
   labels:
     role: host

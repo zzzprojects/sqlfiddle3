@@ -1,10 +1,11 @@
 apiVersion: v1
 kind: Pod
 metadata:
+  namespace: sqlfiddle
   name: hostmonitor
 spec:
   containers:
-    - image: sqlfiddle:hostMonitor
+    - image: {{ .Values.registryPrefix }}/sqlfiddle:hostMonitor
       imagePullPolicy: IfNotPresent
       name: hostmonitor
       ports:

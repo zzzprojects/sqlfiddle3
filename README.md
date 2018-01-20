@@ -24,7 +24,7 @@ You will need these installed locally to build the project:
 
 ### Preparing a local Kubernetes environment
 
-The project is designed to run within any Kubernetes environment. One such environment is Minikube, which is useful for doing local development and evaluation. Review the Minikube installation instructions here if this is your chosen Kubernetes environment:
+The project is designed to run within any Kubernetes environment. One such environment is Minikube, which is useful for doing local development and evaluation. Review the Minikube installation instructions here if this is your chosen Kubernetes environment:   
 
     https://kubernetes.io/docs/tasks/tools/install-minikube/
 
@@ -35,6 +35,10 @@ If you want to run all of the database services, you will probably need at least
 If you are using Minikube, it is convenient to use the docker daemon which comes with it for publishing the container images. Setup your docker environment to do so with this command:
 
     eval $(minikube docker-env)
+
+You also need to enable the "ingress" addon, like so:
+
+    minikube addons enable ingress
 
 ### Building Docker images
 
@@ -48,45 +52,54 @@ If you want to include Oracle 11g XE in your environment, you have to do some ma
 
 Finally you can issue the Docker build command necessary to create the image:
 
-    docker build -t sqlfiddle:oracle11gHost oracle11gHost
+    docker build -t local/sqlfiddle:oracle11gHost oracle11gHost
 
 #### Docker build commands
 
 You can build the remaining container images with these commands:
 
     (cd appServer/; mvn clean package)
-    docker build -t sqlfiddle:varnish varnish
-    docker build -t sqlfiddle:appDatabase appDatabase
-    docker build -t sqlfiddle:hostMonitor hostMonitor
-    docker build -t sqlfiddle:mysql56Host mysql56Host
-    docker build -t sqlfiddle:postgresql96Host postgresql96Host
-    docker build -t sqlfiddle:postgresql93Host postgresql93Host
-    docker build -t sqlfiddle:mssql2017Host mssql2017Host
+    docker build -t local/sqlfiddle:varnish varnish
+    docker build -t local/sqlfiddle:appDatabase appDatabase
+    docker build -t local/sqlfiddle:hostMonitor hostMonitor
+    docker build -t local/sqlfiddle:mysql56Host mysql56Host
+    docker build -t local/sqlfiddle:postgresql96Host postgresql96Host
+    docker build -t local/sqlfiddle:postgresql93Host postgresql93Host
+    docker build -t local/sqlfiddle:mssql2017Host mssql2017Host
 
 If you are using Minikube and have setup the docker environment as mentioned above, you don't need to take any more steps to make these images available to your Kubernetes environment. If you are using some other Kubernetes service, then you will need to publish those images to whichever container registry necessary for your Kubernetes service to read them.
 
+### Publishing to a custom docker registry
+
+Use these commands to publish the local builds of your containers to a remote registry. Note that the "appDatabase" container is not included here; that's because it is expected that in production, you would use an external PostgreSQL service (such as AWS RDS) to run the appDatabase.
+
+    docker tag local/sqlfiddle:appServer $EXTERNAL_REGISTRY/sqlfiddle:appServer
+    docker push $EXTERNAL_REGISTRY/sqlfiddle:appServer
+    docker tag local/sqlfiddle:varnish $EXTERNAL_REGISTRY/sqlfiddle:varnish
+    docker push $EXTERNAL_REGISTRY/sqlfiddle:varnish
+    docker tag local/sqlfiddle:hostMonitor $EXTERNAL_REGISTRY/sqlfiddle:hostMonitor
+    docker push $EXTERNAL_REGISTRY/sqlfiddle:hostMonitor
+    docker tag local/sqlfiddle:mysql56Host $EXTERNAL_REGISTRY/sqlfiddle:mysql56Host
+    docker push $EXTERNAL_REGISTRY/sqlfiddle:mysql56Host
+    docker tag local/sqlfiddle:postgresql93Host $EXTERNAL_REGISTRY/sqlfiddle:postgresql93Host
+    docker push $EXTERNAL_REGISTRY/sqlfiddle:postgresql93Host
+    docker tag local/sqlfiddle:postgresql96Host $EXTERNAL_REGISTRY/sqlfiddle:postgresql96Host
+    docker push $EXTERNAL_REGISTRY/sqlfiddle:postgresql96Host
+    docker tag local/sqlfiddle:oracle11gHost $EXTERNAL_REGISTRY/sqlfiddle:oracle11gHost
+    docker push $EXTERNAL_REGISTRY/sqlfiddle:oracle11gHost
+    docker tag local/sqlfiddle:mssql2017Host $EXTERNAL_REGISTRY/sqlfiddle:mssql2017Host
+    docker push $EXTERNAL_REGISTRY/sqlfiddle:mssql2017Host
+
+
 ### Starting Kubernetes services
 
-You will need to have `kubectl` installed before running these commands. If you installed Minikube then it should already be available. Otherwise just make sure you have it installed and configured to refer to your Kubernetes environment.
+You will need to have `helm` and `kubectl` installed before running these commands. If you installed Minikube then kubectl should already be available. Otherwise just make sure you have it installed and configured to refer to your Kubernetes environment.
 
 Once the container images are available to Kubernetes (from the above steps), run these commands to start up the SQL Fiddle services:
 
     kubectl create namespace sqlfiddle
-    kubectl --namespace sqlfiddle apply -f kubernetes/appdatabase.yml
-    kubectl --namespace sqlfiddle apply -f kubernetes/appservers.yml
-    kubectl --namespace sqlfiddle apply -f kubernetes/hostmonitor.yml
-
-You can then choose which host databases you would like to work with, using any of these commands:
-
-    kubectl --namespace sqlfiddle apply -f kubernetes/mysql56.yml
-
-    kubectl --namespace sqlfiddle apply -f kubernetes/postgresql96.yml
-
-    kubectl --namespace sqlfiddle apply -f kubernetes/postgresql93.yml
-
-    kubectl --namespace sqlfiddle apply -f kubernetes/mssql2017.yml
-
-    kubectl --namespace sqlfiddle apply -f kubernetes/oracle11g.yml
+    helm init
+    helm install sqlfiddleChart
 
 ### Accessing your running instance
 

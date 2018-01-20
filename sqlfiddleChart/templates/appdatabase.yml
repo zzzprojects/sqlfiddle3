@@ -1,12 +1,14 @@
+{{ if .Values.isLocal }}
 apiVersion: v1
 kind: Pod
 metadata:
+  namespace: sqlfiddle
   name: appdatabase
   labels:
     role: appdatabase
 spec:
   containers:
-    - image: sqlfiddle:appDatabase
+    - image: {{ .Values.registryPrefix }}/sqlfiddle:appDatabase
       imagePullPolicy: IfNotPresent
       name: appdatabase
       ports:
@@ -16,6 +18,7 @@ spec:
 kind: Service
 apiVersion: v1
 metadata:
+  namespace: sqlfiddle
   name: appdatabase
 spec:
   ports:
@@ -23,3 +26,13 @@ spec:
       targetPort: 5432
   selector:
     role: appdatabase
+{{ else }}
+kind: Service
+apiVersion: v1
+metadata:
+  namespace: sqlfiddle
+  name: appdatabase
+spec:
+  type: ExternalName
+  externalName: {{ .Values.appDatabaseIP }}
+{{ end }}

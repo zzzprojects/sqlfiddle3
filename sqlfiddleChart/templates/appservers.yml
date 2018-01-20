@@ -1,6 +1,7 @@
 apiVersion: extensions/v1beta1
 kind: ReplicaSet
 metadata:
+  namespace: sqlfiddle
   name: appservers
 spec:
   replicas: 2
@@ -10,7 +11,7 @@ spec:
         role: appserver
     spec:
       containers:
-        - image: sqlfiddle:appServer
+        - image: {{ .Values.registryPrefix }}/sqlfiddle:appServer
           imagePullPolicy: IfNotPresent
           name: appserver
           ports:
@@ -30,7 +31,7 @@ spec:
             initialDelaySeconds: 5
             timeoutSeconds: 2
             periodSeconds: 20
-        - image: sqlfiddle:varnish
+        - image: {{ .Values.registryPrefix }}/sqlfiddle:varnish
           imagePullPolicy: IfNotPresent
           name: varnish
           ports:
@@ -49,20 +50,27 @@ spec:
 kind: Service
 apiVersion: v1
 metadata:
+  namespace: sqlfiddle
   name: appserver-service
 spec:
+{{ if .Values.isLocal }}{{ else }}
+  type: LoadBalancer
+{{ end }}
   ports:
     - port: 80
       name: http
       targetPort: 8080
   selector:
     role: appserver
+{{ if .Values.isLocal }}
 ---
 apiVersion: extensions/v1beta1
 kind: Ingress
 metadata:
+  namespace: sqlfiddle
   name: ingress
 spec:
   backend:
     serviceName: appserver-service
     servicePort: 80
+{{ end }}

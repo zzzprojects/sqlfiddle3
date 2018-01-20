@@ -6,3 +6,4 @@ appServer/target
 node_modules
 *.zip
 jmeter.log
+prodValues.yaml

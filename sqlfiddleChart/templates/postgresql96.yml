@@ -1,20 +1,21 @@
 apiVersion: extensions/v1beta1
 kind: ReplicaSet
 metadata:
-  name: mssql2017
+  namespace: sqlfiddle
+  name: postgresql96
 spec:
   replicas: 1
   template:
     metadata:
       labels:
-        type: mssql2017
+        type: postgresql96
     spec:
       containers:
-        - image: sqlfiddle:mssql2017Host
+        - image: {{ .Values.registryPrefix }}/sqlfiddle:postgresql96Host
           imagePullPolicy: IfNotPresent
-          name: mssql2017
+          name: postgresql96
           ports:
-            - containerPort: 1433
+            - containerPort: 5432
               protocol: TCP
           resources:
               requests:
@@ -30,13 +31,14 @@ spec:
 kind: Service
 apiVersion: v1
 metadata:
-  name: mssql2017-service
+  namespace: sqlfiddle
+  name: postgresql96-service
   labels:
     role: host
 spec:
   clusterIP: None
   ports:
-    - port: 1433
+    - port: 5432
       name: database
   selector:
-    type: mssql2017
+    type: postgresql96

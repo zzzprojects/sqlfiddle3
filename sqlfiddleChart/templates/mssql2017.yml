@@ -1,20 +1,21 @@
 apiVersion: extensions/v1beta1
 kind: ReplicaSet
 metadata:
-  name: mysql56
+  namespace: sqlfiddle
+  name: mssql2017
 spec:
   replicas: 1
   template:
     metadata:
       labels:
-        type: mysql56
+        type: mssql2017
     spec:
       containers:
-        - image: sqlfiddle:mysql56Host
+        - image: {{ .Values.registryPrefix }}/sqlfiddle:mssql2017Host
           imagePullPolicy: IfNotPresent
-          name: mysql56
+          name: mssql2017
           ports:
-            - containerPort: 3306
+            - containerPort: 1433
               protocol: TCP
           resources:
               requests:
@@ -30,13 +31,14 @@ spec:
 kind: Service
 apiVersion: v1
 metadata:
-  name: mysql56-service
+  namespace: sqlfiddle
+  name: mssql2017-service
   labels:
     role: host
 spec:
   clusterIP: None
   ports:
-    - port: 3306
+    - port: 1433
       name: database
   selector:
-    type: mysql56
+    type: mssql2017

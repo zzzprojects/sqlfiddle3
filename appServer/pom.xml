@@ -176,7 +176,7 @@
                 <configuration>
                   <dockerDirectory>${project.basedir}/src/main/docker</dockerDirectory>
                   <!-- Configure the image name -->
-                  <imageName>sqlfiddle:appServer</imageName>
+                  <imageName>local/sqlfiddle:appServer</imageName>
                   <resources>
                     <resource>
                       <targetPath>/</targetPath>
