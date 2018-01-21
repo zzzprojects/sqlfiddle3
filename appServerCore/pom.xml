@@ -151,40 +151,6 @@
                     </execution>
                 </executions>
             </plugin>
-
-            <!--plugin>
-                <groupId>com.github.eirslett</groupId>
-                <artifactId>frontend-maven-plugin</artifactId>
-                <version>0.0.28</version>
-                <executions>
-                </executions>
-            </plugin-->
-
-            <plugin>
-                <groupId>com.spotify</groupId>
-                <artifactId>docker-maven-plugin</artifactId>
-                <version>1.0.0</version>
-                <executions>
-                  <execution>
-                    <id>docker</id>
-                    <phase>package</phase>
-                    <goals>
-                      <goal>build</goal>
-                    </goals>
-                  </execution>
-                </executions>
-                <configuration>
-                  <dockerDirectory>${project.basedir}/src/main/docker</dockerDirectory>
-                  <!-- Configure the image name -->
-                  <imageName>local/sqlfiddle:appServer</imageName>
-                  <resources>
-                    <resource>
-                      <targetPath>/</targetPath>
-                      <directory>src/main/verticles</directory>
-                    </resource>
-                </resources>
-                </configuration>
-            </plugin>
         </plugins>
     </build>
 </project>

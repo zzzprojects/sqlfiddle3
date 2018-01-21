@@ -1,0 +1,19 @@
+# This will only work if you have built the docker images locally within
+# something like Minikube:
+registryPrefix: sqlfiddle
+
+# If you are running outside of Minikube, you will need to publish your
+# commercial images to a private registry, as in below:
+# registryPrefix: 01234567890.dkr.ecr.us-west-2.amazonaws.com/sqlfiddle
+
+# Use the app server with whatever additional commercial software has been included within it:
+sqlfiddleOpenCore:
+  appServerImage: appserverextended
+  # Indicates whether or not you are running in Minikube (i.e. doing development):
+  isLocal: true
+  registryPrefix: sqlfiddle
+
+# If you are not in development, you need to manage the appDatabase PostgreSQL
+# instance yourself, with an external service. To do so, uncomment this line and
+# provide the actual IP/DNS entry for your appDatabase instance:
+# appDatabaseIP: 127.0.0.1

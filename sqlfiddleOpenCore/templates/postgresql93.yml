@@ -2,20 +2,20 @@ apiVersion: extensions/v1beta1
 kind: ReplicaSet
 metadata:
   namespace: sqlfiddle
-  name: mysql56
+  name: postgresql93
 spec:
   replicas: 1
   template:
     metadata:
       labels:
-        type: mysql56
+        type: postgresql93
     spec:
       containers:
-        - image: {{ .Values.registryPrefix }}/sqlfiddle:mysql56Host
+        - image: sqlfiddle/postgresql93host:latest
           imagePullPolicy: IfNotPresent
-          name: mysql56
+          name: postgresql93
           ports:
-            - containerPort: 3306
+            - containerPort: 5432
               protocol: TCP
           resources:
               requests:
@@ -32,13 +32,13 @@ kind: Service
 apiVersion: v1
 metadata:
   namespace: sqlfiddle
-  name: mysql56-service
+  name: postgresql93-service
   labels:
     role: host
 spec:
   clusterIP: None
   ports:
-    - port: 3306
+    - port: 5432
       name: database
   selector:
-    type: mysql56
+    type: postgresql93

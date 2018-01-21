@@ -10,17 +10,21 @@ Contributions are welcome!
 
 ## Running SQL Fiddle
 
-This version of the site is built using Docker, designed to run within Kubernetes.
+This version of the site is built using Docker, designed to run within Kubernetes using Helm.
 
 The application server is implemented with Vert.x.
 
-### Software required to build SQL Fiddle
+If you have installed Helm and Kubernetes is setup properly, you can launch the core system without even having to clone this project. Just run these commands:
 
-You will need these installed locally to build the project:
+    helm repo add sqlfiddle https://jakefeasel.github.io/sqlfiddle3/charts/
+    kubectl create namespace sqlfiddle
+    helm install sqlfiddle/sqlfiddleOpenCore
 
-    Java 8+
-    Maven 3.3+
-    Docker 17+
+After running this command, your copy of the site will be running in your kubernetes environment.
+
+### Software required for building
+
+You will need Docker installed to build the project. You need kubectl and helm if you want to run it. If you want to run it locally, you need Minikube.
 
 ### Preparing a local Kubernetes environment
 
@@ -28,7 +32,7 @@ The project is designed to run within any Kubernetes environment. One such envir
 
     https://kubernetes.io/docs/tasks/tools/install-minikube/
 
-If you want to run all of the database services, you will probably need at least 8GB of memory for Kubernetes. Here's how you would configure Minikube with 8GB of memory:
+You will probably need at least 8GB of memory for Kubernetes. Here's how you would configure Minikube with 8GB of memory:
 
     minikube start --insecure-registry 10.0.0.0/24 --memory 8192
 
@@ -40,66 +44,68 @@ You also need to enable the "ingress" addon, like so:
 
     minikube addons enable ingress
 
+Finally, initialize helm:
+
+    helm init
+
 ### Building Docker images
 
-#### Preliminary steps for Oracle 11g XE
+You can build the container images with these commands:
+
+    docker build -t sqlfiddle/appservercore:latest appServerCore
+    docker build -t sqlfiddle/varnish:latest varnish
+    docker build -t sqlfiddle/appdatabase:latest appDatabase
+    docker build -t sqlfiddle/hostmonitor:latest hostMonitor
+    docker build -t sqlfiddle/mysql56host:latest mysql56Host
+    docker build -t sqlfiddle/postgresql96host:latest postgresql96Host
+    docker build -t sqlfiddle/postgresql93host:latest postgresql93Host
+    docker build -t sqlfiddle/mssql2017host:latest mssql2017Host
+
+#### Extra steps necessary for Oracle 11g XE
 If you want to include Oracle 11g XE in your environment, you have to do some manual steps first (*thanks Oracle!*):
 
 1. Download ojdbc6.jar from http://www.oracle.com/technetwork/database/enterprise-edition/jdbc-112010-090769.html
-2. `mkdir appServer/src/main/verticles/lib/ && cp ojdbc6.jar appServer/src/main/verticles/lib/`
+2. `cp ojdbc6.jar appServerExtended/`
 3. Download oracle-xe-11.2.0-1.0.x86_64.rpm.zip from http://www.oracle.com/technetwork/database/database-technologies/express-edition/downloads/index.html
 4. `cp oracle-xe-11.2.0-1.0.x86_64.rpm.zip oracle11gHost`
 
-Finally you can issue the Docker build command necessary to create the image:
+Finally you can issue these Docker build commands to make the Oracle-extended versions:
 
-    docker build -t local/sqlfiddle:oracle11gHost oracle11gHost
-
-#### Docker build commands
-
-You can build the remaining container images with these commands:
-
-    (cd appServer/; mvn clean package)
-    docker build -t local/sqlfiddle:varnish varnish
-    docker build -t local/sqlfiddle:appDatabase appDatabase
-    docker build -t local/sqlfiddle:hostMonitor hostMonitor
-    docker build -t local/sqlfiddle:mysql56Host mysql56Host
-    docker build -t local/sqlfiddle:postgresql96Host postgresql96Host
-    docker build -t local/sqlfiddle:postgresql93Host postgresql93Host
-    docker build -t local/sqlfiddle:mssql2017Host mssql2017Host
+    docker build -t sqlfiddle/appserverextended:latest appServerExtended
+    docker build -t sqlfiddle/oracle11ghost:latest oracle11gHost
 
 If you are using Minikube and have setup the docker environment as mentioned above, you don't need to take any more steps to make these images available to your Kubernetes environment. If you are using some other Kubernetes service, then you will need to publish those images to whichever container registry necessary for your Kubernetes service to read them.
 
 ### Publishing to a custom docker registry
 
-Use these commands to publish the local builds of your containers to a remote registry. Note that the "appDatabase" container is not included here; that's because it is expected that in production, you would use an external PostgreSQL service (such as AWS RDS) to run the appDatabase.
+Use these commands to publish the local builds of your containers to a remote registry. This is necessary when you are using something other than Minikube as your Kubernetes host. Be sure that the registry you are pushing into is available to your Kubernetes instance. Also be sure not to redistribute commercial software to a public location, as you will probably be violating copyright terms.
 
-    docker tag local/sqlfiddle:appServer $EXTERNAL_REGISTRY/sqlfiddle:appServer
-    docker push $EXTERNAL_REGISTRY/sqlfiddle:appServer
-    docker tag local/sqlfiddle:varnish $EXTERNAL_REGISTRY/sqlfiddle:varnish
-    docker push $EXTERNAL_REGISTRY/sqlfiddle:varnish
-    docker tag local/sqlfiddle:hostMonitor $EXTERNAL_REGISTRY/sqlfiddle:hostMonitor
-    docker push $EXTERNAL_REGISTRY/sqlfiddle:hostMonitor
-    docker tag local/sqlfiddle:mysql56Host $EXTERNAL_REGISTRY/sqlfiddle:mysql56Host
-    docker push $EXTERNAL_REGISTRY/sqlfiddle:mysql56Host
-    docker tag local/sqlfiddle:postgresql93Host $EXTERNAL_REGISTRY/sqlfiddle:postgresql93Host
-    docker push $EXTERNAL_REGISTRY/sqlfiddle:postgresql93Host
-    docker tag local/sqlfiddle:postgresql96Host $EXTERNAL_REGISTRY/sqlfiddle:postgresql96Host
-    docker push $EXTERNAL_REGISTRY/sqlfiddle:postgresql96Host
-    docker tag local/sqlfiddle:oracle11gHost $EXTERNAL_REGISTRY/sqlfiddle:oracle11gHost
-    docker push $EXTERNAL_REGISTRY/sqlfiddle:oracle11gHost
-    docker tag local/sqlfiddle:mssql2017Host $EXTERNAL_REGISTRY/sqlfiddle:mssql2017Host
-    docker push $EXTERNAL_REGISTRY/sqlfiddle:mssql2017Host
+    docker tag sqlfiddle/appserverextended:latest $EXTERNAL_REGISTRY/appserverextended:latest
+    docker push $EXTERNAL_REGISTRY/appserverextended:latest
+    docker tag sqlfiddle/oracle11ghost:latest $EXTERNAL_REGISTRY/oracle11ghost:latest
+    docker push $EXTERNAL_REGISTRY/oracle11ghost:latest
+    docker tag sqlfiddle/mssql2017host:latest $EXTERNAL_REGISTRY/mssql2017host:latest
+    docker push $EXTERNAL_REGISTRY/mssql2017host:latest
 
+Be sure to configure your sqlfiddleCommercialExtension helm chart to use $EXTERNAL_REGISTRY as the value for registryPrefix.
 
 ### Starting Kubernetes services
+
+Note that it is expected that in production, you would use an external PostgreSQL service (such as AWS RDS) to run the appDatabase. The "isLocal" switch in the helm charts is used to switch between an externally-hosted appDatabase and one running in a container.
 
 You will need to have `helm` and `kubectl` installed before running these commands. If you installed Minikube then kubectl should already be available. Otherwise just make sure you have it installed and configured to refer to your Kubernetes environment.
 
 Once the container images are available to Kubernetes (from the above steps), run these commands to start up the SQL Fiddle services:
 
     kubectl create namespace sqlfiddle
-    helm init
-    helm install sqlfiddleChart
+    helm install sqlfiddleOpenCore
+
+To run the commercial software, use these commands instead:
+
+    kubectl create namespace sqlfiddle
+    helm install sqlfiddleCommercialExtension
+
+This will bring the site up with SQL Server and Oracle running too.
 
 ### Accessing your running instance
 

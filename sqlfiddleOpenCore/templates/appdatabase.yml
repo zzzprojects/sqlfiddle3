@@ -8,7 +8,7 @@ metadata:
     role: appdatabase
 spec:
   containers:
-    - image: {{ .Values.registryPrefix }}/sqlfiddle:appDatabase
+    - image: sqlfiddle/appdatabase:latest
       imagePullPolicy: IfNotPresent
       name: appdatabase
       ports:

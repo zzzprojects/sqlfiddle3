@@ -1,0 +1,21 @@
+apiVersion: v1
+entries:
+  sqlfiddleCommercialExtension:
+  - apiVersion: v1
+    created: 2018-01-21T13:53:01.41555965-08:00
+    description: A Helm chart for commercial extensons to SQL Fiddle
+    digest: d1f3f8a67739f87273803fd405b885bf32ca23e080cd8fd55ffbfdb6dfbcba02
+    name: sqlfiddleCommercialExtension
+    urls:
+    - https://jakefeasel.github.io/sqlfiddle3/charts/sqlfiddleCommercialExtension-1.0.0.tgz
+    version: 1.0.0
+  sqlfiddleOpenCore:
+  - apiVersion: v1
+    created: 2018-01-21T13:53:01.415710527-08:00
+    description: A Helm chart for the open-source core of SQL Fiddle
+    digest: b830e66295e679d941c006c42ef33487f47749e43ac29900f93878f5151cd64b
+    name: sqlfiddleOpenCore
+    urls:
+    - https://jakefeasel.github.io/sqlfiddle3/charts/sqlfiddleOpenCore-1.0.0.tgz
+    version: 1.0.0
+generated: 2018-01-21T13:53:01.415225451-08:00

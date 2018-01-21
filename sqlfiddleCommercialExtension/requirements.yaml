@@ -1,0 +1,3 @@
+dependencies:
+- name: sqlfiddleOpenCore
+  version: "1.0.0"

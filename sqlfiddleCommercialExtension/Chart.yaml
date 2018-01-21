@@ -1,0 +1,4 @@
+apiVersion: v1
+description: A Helm chart for commercial extensons to SQL Fiddle
+name: sqlfiddleCommercialExtension
+version: 1.0.0

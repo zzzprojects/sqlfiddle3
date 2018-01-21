@@ -2,21 +2,28 @@ apiVersion: extensions/v1beta1
 kind: ReplicaSet
 metadata:
   namespace: sqlfiddle
-  name: mssql2017
+  name: oracle11g
 spec:
   replicas: 1
   template:
     metadata:
       labels:
-        type: mssql2017
+        type: oracle11g
     spec:
+      volumes:
+      - name: dshm
+        emptyDir:
+          medium: Memory
       containers:
-        - image: {{ .Values.registryPrefix }}/sqlfiddle:mssql2017Host
+        - image: {{ .Values.registryPrefix }}/oracle11ghost:latest
           imagePullPolicy: IfNotPresent
-          name: mssql2017
+          name: oracle11g
           ports:
-            - containerPort: 1433
+            - containerPort: 1521
               protocol: TCP
+          volumeMounts:
+            - mountPath: /dev/shm
+              name: dshm
           resources:
               requests:
                 memory: "512Mi"
@@ -24,7 +31,7 @@ spec:
             exec:
               command:
                 - "/ready.sh"
-            initialDelaySeconds: 5
+            initialDelaySeconds: 30
             timeoutSeconds: 5
             periodSeconds: 10
 ---
@@ -32,13 +39,13 @@ kind: Service
 apiVersion: v1
 metadata:
   namespace: sqlfiddle
-  name: mssql2017-service
+  name: oracle11g-service
   labels:
     role: host
 spec:
   clusterIP: None
   ports:
-    - port: 1433
+    - port: 1521
       name: database
   selector:
-    type: mssql2017
+    type: oracle11g

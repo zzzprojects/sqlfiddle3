@@ -1,4 +1,0 @@
-apiVersion: v1
-description: A Helm chart for SQL Fiddle
-name: sqlfiddle
-version: 1.0.0

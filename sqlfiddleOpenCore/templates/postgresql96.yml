@@ -2,28 +2,21 @@ apiVersion: extensions/v1beta1
 kind: ReplicaSet
 metadata:
   namespace: sqlfiddle
-  name: oracle11g
+  name: postgresql96
 spec:
   replicas: 1
   template:
     metadata:
       labels:
-        type: oracle11g
+        type: postgresql96
     spec:
-      volumes:
-      - name: dshm
-        emptyDir:
-          medium: Memory
       containers:
-        - image: {{ .Values.registryPrefix }}/sqlfiddle:oracle11gHost
+        - image: sqlfiddle/postgresql96host:latest
           imagePullPolicy: IfNotPresent
-          name: oracle11g
+          name: postgresql96
           ports:
-            - containerPort: 1521
+            - containerPort: 5432
               protocol: TCP
-          volumeMounts:
-            - mountPath: /dev/shm
-              name: dshm
           resources:
               requests:
                 memory: "512Mi"
@@ -31,7 +24,7 @@ spec:
             exec:
               command:
                 - "/ready.sh"
-            initialDelaySeconds: 30
+            initialDelaySeconds: 5
             timeoutSeconds: 5
             periodSeconds: 10
 ---
@@ -39,13 +32,13 @@ kind: Service
 apiVersion: v1
 metadata:
   namespace: sqlfiddle
-  name: oracle11g-service
+  name: postgresql96-service
   labels:
     role: host
 spec:
   clusterIP: None
   ports:
-    - port: 1521
+    - port: 5432
       name: database
   selector:
-    type: oracle11g
+    type: postgresql96

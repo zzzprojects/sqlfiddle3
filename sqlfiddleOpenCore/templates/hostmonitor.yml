@@ -4,8 +4,15 @@ metadata:
   namespace: sqlfiddle
   name: hostmonitor
 spec:
+{{ if .Values.isLocal }}
+  initContainers:
+  - name: wait-for-repo
+    image: "groundnuty/k8s-wait-for:0.3"
+    imagePullPolicy: IfNotPresent
+    args: [ "pod", "-l", "role=appdatabase" ]
+{{ end }}
   containers:
-    - image: {{ .Values.registryPrefix }}/sqlfiddle:hostMonitor
+    - image: sqlfiddle/hostmonitor:latest
       imagePullPolicy: IfNotPresent
       name: hostmonitor
       ports:

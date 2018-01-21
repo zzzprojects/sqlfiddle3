@@ -1,0 +1,13 @@
+appServerImage: appservercore
+
+# Indicates whether or not you are running in Minikube (i.e. doing development):
+isLocal: true
+
+# If you are not in development, you need to manage the appDatabase PostgreSQL
+# instance yourself, with an external service. To do so, uncomment this line and
+# provide the actual IP/DNS entry for your appDatabase instance:
+# appDatabaseIP: 127.0.0.1
+
+
+
+registryPrefix: sqlfiddle
