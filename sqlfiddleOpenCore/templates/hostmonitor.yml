@@ -1,23 +1,29 @@
-apiVersion: v1
-kind: Pod
+apiVersion: extensions/v1beta1
+kind: ReplicaSet
 metadata:
   namespace: sqlfiddle
   name: hostmonitor
 spec:
-{{ if .Values.isLocal }}
-  initContainers:
-  - name: wait-for-repo
-    image: "groundnuty/k8s-wait-for:0.3"
-    imagePullPolicy: IfNotPresent
-    args: [ "pod", "-l", "role=appdatabase" ]
-{{ end }}
-  containers:
-    - image: sqlfiddle/hostmonitor:latest
-      imagePullPolicy: IfNotPresent
-      name: hostmonitor
-      ports:
-        - containerPort: 5432
-          protocol: TCP
-      resources:
-          requests:
-            memory: "64Mi"
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        role: monitor
+    spec:
+    {{ if .Values.isLocal }}
+      initContainers:
+      - name: wait-for-repo
+        image: "groundnuty/k8s-wait-for:0.3"
+        imagePullPolicy: IfNotPresent
+        args: [ "pod", "-l", "role=appdatabase" ]
+    {{ end }}
+      containers:
+        - image: sqlfiddle/hostmonitor:latest
+          imagePullPolicy: IfNotPresent
+          name: hostmonitor
+          ports:
+            - containerPort: 5432
+              protocol: TCP
+          resources:
+              requests:
+                memory: "64Mi"
