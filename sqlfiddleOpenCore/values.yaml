@@ -12,6 +12,7 @@ isLocal: true
 
 registryPrefix: sqlfiddle
 
+appServerReplicas: 1
 appServerVersion: latest
 varnishVersion: latest
 hostMonitorVersion: latest

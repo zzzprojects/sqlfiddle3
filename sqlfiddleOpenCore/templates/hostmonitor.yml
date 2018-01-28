@@ -10,13 +10,17 @@ spec:
       labels:
         role: monitor
     spec:
-    {{ if .Values.appDatabaseIP }}
+    {{ if .Values.appDatabaseIP }}{{else}}
       initContainers:
       - name: wait-for-repo
         image: "groundnuty/k8s-wait-for:0.3"
         imagePullPolicy: IfNotPresent
         args: [ "pod", "-l", "role=appdatabase" ]
     {{ end }}
+      volumes:
+      - name: healthcheck
+        emptyDir:
+          medium: Memory
       containers:
         - image: sqlfiddle/hostmonitor:{{ .Values.hostMonitorVersion }}
           imagePullPolicy: IfNotPresent
@@ -27,3 +31,30 @@ spec:
           resources:
               requests:
                 memory: "64Mi"
+          volumeMounts:
+            - mountPath: /healthcheck
+              name: healthcheck
+          livenessProbe:
+            exec:
+              command:
+              - cat
+              - /healthcheck/healthy
+            initialDelaySeconds: 5
+            periodSeconds: 5
+        # thanks to https://stackoverflow.com/a/41965920/808921
+        - name: liveness
+          args:
+          - /bin/sh
+          - -c
+          - touch /healthcheck/healthy; sleep $(( RANDOM % (3600) + 1800 )); rm -rf /healthcheck/healthy; sleep 600
+          image: gcr.io/google_containers/busybox
+          volumeMounts:
+            - mountPath: /healthcheck
+              name: healthcheck
+          livenessProbe:
+            exec:
+              command:
+              - cat
+              - /healthcheck/healthy
+            initialDelaySeconds: 5
+            periodSeconds: 5

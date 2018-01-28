@@ -4,21 +4,28 @@ metadata:
   namespace: sqlfiddle
   name: appservers
 spec:
-  replicas: 2
+  replicas: {{ .Values.appServerReplicas }}
   template:
     metadata:
       labels:
         role: appserver
     spec:
-    {{ if .Values.appDatabaseIP }}
+    {{ if .Values.appDatabaseIP }}{{else}}
       initContainers:
       - name: wait-for-repo
         image: "groundnuty/k8s-wait-for:0.3"
         imagePullPolicy: IfNotPresent
         args: [ "pod", "-l", "role=appdatabase" ]
     {{ end }}
+      volumes:
+      - name: healthcheck
+        emptyDir:
+          medium: Memory
       containers:
         - image: {{ .Values.registryPrefix }}/{{ .Values.appServerImage }}:{{ .Values.appServerVersion }}
+          volumeMounts:
+            - mountPath: /healthcheck
+              name: healthcheck
           imagePullPolicy: IfNotPresent
           name: appserver
           ports:
@@ -38,7 +45,17 @@ spec:
             initialDelaySeconds: 5
             timeoutSeconds: 2
             periodSeconds: 20
+          livenessProbe:
+            exec:
+              command:
+              - cat
+              - /healthcheck/healthy
+            initialDelaySeconds: 5
+            periodSeconds: 5
         - image: sqlfiddle/varnish:{{ .Values.varnishVersion }}
+          volumeMounts:
+            - mountPath: /healthcheck
+              name: healthcheck
           imagePullPolicy: IfNotPresent
           name: varnish
           ports:
@@ -53,6 +70,30 @@ spec:
           resources:
               requests:
                 memory: "128Mi"
+          livenessProbe:
+            exec:
+              command:
+              - cat
+              - /healthcheck/healthy
+            initialDelaySeconds: 5
+            periodSeconds: 5
+        # thanks to https://stackoverflow.com/a/41965920/808921
+        - name: liveness
+          args:
+          - /bin/sh
+          - -c
+          - touch /healthcheck/healthy; sleep $(( RANDOM % (3600) + 1800 )); rm -rf /healthcheck/healthy; sleep 600
+          image: gcr.io/google_containers/busybox
+          volumeMounts:
+            - mountPath: /healthcheck
+              name: healthcheck
+          livenessProbe:
+            exec:
+              command:
+              - cat
+              - /healthcheck/healthy
+            initialDelaySeconds: 5
+            periodSeconds: 5
 ---
 kind: Service
 apiVersion: v1
