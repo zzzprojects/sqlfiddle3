@@ -15,7 +15,7 @@ spec:
         emptyDir:
           medium: Memory
       containers:
-        - image: {{ .Values.registryPrefix }}/oracle11ghost:latest
+        - image: {{ .Values.registryPrefix }}/oracle11ghost:{{ .Values.oracle11gVersion}}
           imagePullPolicy: IfNotPresent
           name: oracle11g
           ports:

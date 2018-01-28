@@ -1,4 +1,4 @@
 apiVersion: v1
 description: A Helm chart for the open-source core of SQL Fiddle
 name: sqlfiddleOpenCore
-version: 1.0.0
+version: 1.1.0

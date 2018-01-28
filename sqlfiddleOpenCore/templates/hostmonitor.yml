@@ -10,7 +10,7 @@ spec:
       labels:
         role: monitor
     spec:
-    {{ if .Values.isLocal }}
+    {{ if .Values.appDatabaseIP }}
       initContainers:
       - name: wait-for-repo
         image: "groundnuty/k8s-wait-for:0.3"
@@ -18,7 +18,7 @@ spec:
         args: [ "pod", "-l", "role=appdatabase" ]
     {{ end }}
       containers:
-        - image: sqlfiddle/hostmonitor:latest
+        - image: sqlfiddle/hostmonitor:{{ .Values.hostMonitorVersion }}
           imagePullPolicy: IfNotPresent
           name: hostmonitor
           ports:

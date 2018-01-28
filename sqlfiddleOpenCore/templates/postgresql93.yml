@@ -11,7 +11,7 @@ spec:
         type: postgresql93
     spec:
       containers:
-        - image: sqlfiddle/postgresql93host:latest
+        - image: sqlfiddle/postgresql93host:{{ .Values.postgresql93Version }}
           imagePullPolicy: IfNotPresent
           name: postgresql93
           ports:

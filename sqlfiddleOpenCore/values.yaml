@@ -11,3 +11,10 @@ isLocal: true
 
 
 registryPrefix: sqlfiddle
+
+appServerVersion: latest
+varnishVersion: latest
+hostMonitorVersion: latest
+mysql56Version: latest
+postgresql93Version: latest
+postgresql96Version: latest

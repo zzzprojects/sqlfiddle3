@@ -10,7 +10,7 @@ spec:
       labels:
         role: appserver
     spec:
-    {{ if .Values.isLocal }}
+    {{ if .Values.appDatabaseIP }}
       initContainers:
       - name: wait-for-repo
         image: "groundnuty/k8s-wait-for:0.3"
@@ -18,7 +18,7 @@ spec:
         args: [ "pod", "-l", "role=appdatabase" ]
     {{ end }}
       containers:
-        - image: {{ .Values.registryPrefix }}/{{ .Values.appServerImage }}:latest
+        - image: {{ .Values.registryPrefix }}/{{ .Values.appServerImage }}:{{ .Values.appServerVersion }}
           imagePullPolicy: IfNotPresent
           name: appserver
           ports:
@@ -38,7 +38,7 @@ spec:
             initialDelaySeconds: 5
             timeoutSeconds: 2
             periodSeconds: 20
-        - image: sqlfiddle/varnish:latest
+        - image: sqlfiddle/varnish:{{ .Values.varnishVersion }}
           imagePullPolicy: IfNotPresent
           name: varnish
           ports:

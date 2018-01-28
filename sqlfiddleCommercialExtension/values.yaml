@@ -6,6 +6,9 @@ registryPrefix: sqlfiddle
 # commercial images to a private registry, as in below:
 # registryPrefix: 01234567890.dkr.ecr.us-west-2.amazonaws.com/sqlfiddle
 
+mssql2017Version: latest
+oracle11gVersion: latest
+
 # Use the app server with whatever additional commercial software has been included within it:
 sqlfiddleOpenCore:
   appServerImage: appserverextended

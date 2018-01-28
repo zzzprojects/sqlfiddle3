@@ -11,7 +11,7 @@ spec:
         type: mysql56
     spec:
       containers:
-        - image: sqlfiddle/mysql56host:latest
+        - image: sqlfiddle/mysql56host:{{ .Values.mysql56Version }}
           imagePullPolicy: IfNotPresent
           name: mysql56
           ports:

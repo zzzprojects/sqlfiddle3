@@ -1,4 +1,13 @@
-{{ if .Values.isLocal }}
+{{ if .Values.appDatabaseIP }}
+kind: Service
+apiVersion: v1
+metadata:
+  namespace: sqlfiddle
+  name: appdatabase
+spec:
+  type: ExternalName
+  externalName: {{ .Values.appDatabaseIP }}
+{{ else }}
 apiVersion: v1
 kind: Pod
 metadata:
@@ -14,6 +23,13 @@ spec:
       ports:
         - containerPort: 5432
           protocol: TCP
+      readinessProbe:
+        exec:
+          command:
+            - "/ready.sh"
+        initialDelaySeconds: 5
+        timeoutSeconds: 5
+        periodSeconds: 10
 ---
 kind: Service
 apiVersion: v1
@@ -26,13 +42,4 @@ spec:
       targetPort: 5432
   selector:
     role: appdatabase
-{{ else }}
-kind: Service
-apiVersion: v1
-metadata:
-  namespace: sqlfiddle
-  name: appdatabase
-spec:
-  type: ExternalName
-  externalName: {{ .Values.appDatabaseIP }}
 {{ end }}

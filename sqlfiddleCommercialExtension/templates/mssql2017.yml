@@ -11,7 +11,7 @@ spec:
         type: mssql2017
     spec:
       containers:
-        - image: {{ .Values.registryPrefix }}/mssql2017host:latest
+        - image: {{ .Values.registryPrefix }}/mssql2017host:{{ .Values.mssql2017Version}}
           imagePullPolicy: IfNotPresent
           name: mssql2017
           ports:

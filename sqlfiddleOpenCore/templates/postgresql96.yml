@@ -11,7 +11,7 @@ spec:
         type: postgresql96
     spec:
       containers:
-        - image: sqlfiddle/postgresql96host:latest
+        - image: sqlfiddle/postgresql96host:{{ .Values.postgresql96Version }}
           imagePullPolicy: IfNotPresent
           name: postgresql96
           ports:
