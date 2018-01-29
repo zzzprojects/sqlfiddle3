@@ -39,7 +39,7 @@ define(["./OpenIDMResource", "Backbone"], function (idm, Backbone) {
                     short_code = data._id.split('_')[1];
 
                     if (selectedDBType.get("context") === "browser") {
-                        thisModel.get("browserEngines")[selectedDBType.get("className")].buildSchema({
+                        thisModel.get("browserEngines")[selectedDBType.get("classname")].buildSchema({
 
                             short_code: short_code,
                             statement_separator: thisModel.get('statement_separator'),
@@ -52,7 +52,7 @@ define(["./OpenIDMResource", "Backbone"], function (idm, Backbone) {
                                     "errorMessage": ""
                                 });
 
-                                thisModel.get("browserEngines")[selectedDBType.get("className")].getSchemaStructure({
+                                thisModel.get("browserEngines")[selectedDBType.get("classname")].getSchemaStructure({
                                         callback: function (schemaStruct) {
                                             thisModel.set({
                                                 "schema_structure": schemaStruct

@@ -7,7 +7,7 @@ define(["Backbone"], function (Backbone) {
             "full_name": "",
             "selected": false,
             "context": "host",
-            "className": "",
+            "classname": "",
             "num_hosts": 0
         }
     });

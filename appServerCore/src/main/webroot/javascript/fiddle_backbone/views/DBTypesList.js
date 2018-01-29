@@ -20,7 +20,7 @@ define (["jquery", "Backbone", "Handlebars", "text!fiddle_backbone/templates/dbT
                 this.compiledTemplate({
                     dbTypes: this.collection.map(function (dbType) {
                         var json = dbType.toJSON();
-                        json.className = (json.selected ? "active" : "");
+                        json.classname = (json.selected ? "active" : "");
                         json.show = (json.context != 'host' || json.num_hosts > 0) || json.id === selectedDBType.get("id");
                         return json;
                     }),

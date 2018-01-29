@@ -8,6 +8,7 @@ class DBTypes {
             d.simple_name,
             d.sample_fragment,
             d.batch_separator,
+            d.jdbc_class_name as className,
             count(h.id) as num_hosts
         FROM
             db_types d

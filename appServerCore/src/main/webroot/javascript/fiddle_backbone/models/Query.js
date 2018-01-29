@@ -32,7 +32,7 @@ define(["./OpenIDMResource", "Backbone"], function (idm, Backbone) {
             })
             .then(function (resp, textStatus, jqXHR) {
                 if (thisModel.get("schemaDef").get("dbType").get("context") === "browser") {
-                    thisModel.get("schemaDef").get("browserEngines")[thisModel.get("schemaDef").get("dbType").get("className")].executeQuery({
+                    thisModel.get("schemaDef").get("browserEngines")[thisModel.get("schemaDef").get("dbType").get("classname")].executeQuery({
                         sql: thisModel.get("sql"),
                         statement_separator: thisModel.get("statement_separator"),
                         success: function (sets) {

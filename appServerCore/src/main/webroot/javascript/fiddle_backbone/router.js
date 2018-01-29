@@ -77,7 +77,7 @@ define([
                         var selectedDBType = dbTypes.getSelectedType();
 
                         if (selectedDBType.get("context") === "browser") {
-                            schemaDef.get("browserEngines")[selectedDBType.get("className")].buildSchema({
+                            schemaDef.get("browserEngines")[selectedDBType.get("classname")].buildSchema({
 
                                 short_code: $.trim(resp["short_code"]),
                                 statement_separator: resp["schema_statement_separator"],
@@ -111,7 +111,7 @@ define([
                                         }));
                                     }
 
-                                    schemaDef.get("browserEngines")[selectedDBType.get("className")].getSchemaStructure({
+                                    schemaDef.get("browserEngines")[selectedDBType.get("classname")].getSchemaStructure({
                                         callback: function (schemaStruct) {
                                             schemaDef.set({
                                                 "schema_structure": schemaStruct
@@ -120,7 +120,7 @@ define([
                                             schemaDef.trigger("reloaded");
 
                                             if (resp["sql"]) {
-                                                schemaDef.get("browserEngines")[selectedDBType.get("className")].executeQuery({
+                                                schemaDef.get("browserEngines")[selectedDBType.get("classname")].executeQuery({
                                                     sql: resp["sql"],
                                                     statement_separator: resp["query_statement_separator"],
                                                     success: function (sets) {
