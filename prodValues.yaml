@@ -3,11 +3,11 @@
 
 registryPrefix: 321080263678.dkr.ecr.us-west-2.amazonaws.com/sqlfiddle
 
-mssql2017Version: 1.0.1
+mssql2017Version: 1.0.2
 oracle11gVersion: 1.0.0
 
 sqlfiddleOpenCore:
-  appServerReplicas: 2
+  appServerReplicas: 3
   appServerImage: appserverextended
   isLocal: false
   registryPrefix: 321080263678.dkr.ecr.us-west-2.amazonaws.com/sqlfiddle
