@@ -7,7 +7,8 @@ mssql2017Version: 1.0.2
 oracle11gVersion: 1.0.0
 
 sqlfiddleOpenCore:
-  appServerReplicas: 3
+  appServerReplicas: 2
+  appServerMemory: 1024Mi
   appServerImage: appserverextended
   isLocal: false
   registryPrefix: 321080263678.dkr.ecr.us-west-2.amazonaws.com/sqlfiddle

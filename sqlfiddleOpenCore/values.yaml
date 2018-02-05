@@ -13,6 +13,7 @@ isLocal: true
 registryPrefix: sqlfiddle
 
 appServerReplicas: 1
+appServerMemory: 512Mi
 appServerVersion: latest
 varnishVersion: latest
 hostMonitorVersion: latest
