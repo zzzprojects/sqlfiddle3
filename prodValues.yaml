@@ -13,7 +13,7 @@ sqlfiddleOpenCore:
   isLocal: false
   registryPrefix: 321080263678.dkr.ecr.us-west-2.amazonaws.com/sqlfiddle
   appDatabaseIP: sqlfiddle.cq2t9zmnkkgq.us-west-2.rds.amazonaws.com
-  appServerVersion: 1.0.1
+  appServerVersion: 1.0.2
   varnishVersion: 1.0.0
   hostMonitorVersion: 1.0.0
   mysql56Version: 1.0.0

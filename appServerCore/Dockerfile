@@ -18,6 +18,9 @@ RUN cp -R /tmp/target/docker $VERTICLE_HOME
 
 RUN cp -R $VERTICLE_HOME/lib/* $VERTX_HOME/lib
 
+ENV PATH /tmp/target/node_modules/grunt-cli/bin:/tmp/target/node:/usr/local/vertx/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+COPY run.sh $VERTICLE_HOME
+
 WORKDIR $VERTICLE_HOME
 ENTRYPOINT ["sh", "-c"]
-CMD ["vertx run $VERTICLE_NAME -cp $VERTICLE_HOME/*"]
+CMD ["$VERTICLE_HOME/run.sh"]

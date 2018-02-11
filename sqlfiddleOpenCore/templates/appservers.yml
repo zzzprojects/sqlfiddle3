@@ -1,3 +1,33 @@
+{{ if .Values.nfsServerIp }}
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: appserver-src
+spec:
+  capacity:
+    storage: 15Gi
+  accessModes:
+  - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: standard
+  nfs:
+    server: {{ .Values.nfsServerIp }}
+    path: {{ .Values.nfsPath }}
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: appserver-src-claim
+spec:
+  storageClassName: standard
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 15Gi
+---
+{{ end }}
+
 apiVersion: extensions/v1beta1
 kind: ReplicaSet
 metadata:
@@ -21,11 +51,20 @@ spec:
       - name: healthcheck
         emptyDir:
           medium: Memory
+    {{ if .Values.nfsServerIp }}
+      - name: nfs-storage
+        persistentVolumeClaim:
+          claimName: appserver-src-claim
+    {{ end }}
       containers:
         - image: {{ .Values.registryPrefix }}/{{ .Values.appServerImage }}:{{ .Values.appServerVersion }}
           volumeMounts:
             - mountPath: /healthcheck
               name: healthcheck
+        {{ if .Values.nfsServerIp }}
+            - mountPath: "/tmp/src"
+              name: nfs-storage
+        {{ end }}
           imagePullPolicy: IfNotPresent
           name: appserver
           ports:
@@ -36,8 +75,15 @@ spec:
               requests:
                 memory: {{ .Values.appServerMemory | quote }}
           env:
+        {{ if .Values.nfsServerIp }}
             - name: VERTX_OPTS
               value: "-XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/tmp -Xmx960m -Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=n,address=5005 -Dvertx.disableFileCaching=true -Dvertx.disableFileCPResolving=true"
+            - name: MODE
+              value: "DEVELOPMENT"
+        {{ else }}
+            - name: VERTX_OPTS
+              value: "-XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/tmp -Xmx960m -Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=n,address=5005"
+        {{ end }}
           readinessProbe:
             httpGet:
               path: /backend/dbTypes

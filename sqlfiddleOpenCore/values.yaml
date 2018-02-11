@@ -3,6 +3,12 @@ appServerImage: appservercore
 # Indicates whether or not you are running in Minikube (i.e. doing development):
 isLocal: true
 
+# default host IP on virtual box network when using minikube:
+# nfsServerIp: 192.168.99.1
+
+# path to source folder for the appServerCore
+# nfsPath: /git/sqlfiddle3/appServerCore/src/
+
 # If you are not in development, you need to manage the appDatabase PostgreSQL
 # instance yourself, with an external service. To do so, uncomment this line and
 # provide the actual IP/DNS entry for your appDatabase instance:

@@ -97,7 +97,7 @@ module.exports = function(grunt) {
         watch: {
             copyUIJS: {
                 files: [srcFolder + 'javascript/**/*', "!" + srcFolder + 'javascript/*_min.js*'],
-                tasks: ['sync:webroot', 'requirejs:minifyMainJS', 'requirejs:minifyOAuthJS' ]
+                tasks: ['sync:webroot', 'requirejs:minifyMainJS' ]
             },
             copyLESS: {
                 files: [srcFolder + 'css/*.less', srcFolder + 'css/*.css', "!" + srcFolder + 'css/*_min.css',],
