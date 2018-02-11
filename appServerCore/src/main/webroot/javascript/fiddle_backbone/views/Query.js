@@ -51,6 +51,7 @@ define ([
         renderOutput: function() {
             var thisModel = this.model;
             var inspectedData = this.model.toJSON();
+            var latestDBType = this.options.dbTypes.getLatestDBTypeForSimpleName();
 
             /* This loop determines the max width of each column, so it can be padded appropriately (if needed) */
             _.each(inspectedData.sets, function (set, sidx) {
@@ -81,6 +82,7 @@ define ([
                 inspectedData.sets[sidx].RESULTS.COLUMNWIDTHS = columnWidths;
                 }
             });
+            inspectedData["latestDBType"] = latestDBType ? latestDBType.toJSON() : null;
             inspectedData["schemaDef"] = this.model.get("schemaDef").toJSON();
             inspectedData["schemaDef"]["dbType"] = this.model.get("schemaDef").get("dbType").toJSON();
             inspectedData["schemaDef"]["dbType"]["isSQLServer"] = this.model.get("schemaDef").get("dbType").get("simple_name") == "SQL Server";
@@ -105,6 +107,16 @@ define ([
 
 
             });
+
+            this.options.output_el.find(".convert-to-latest").click(_.bind(function (e) {
+                e.preventDefault();
+                this.options.dbTypes.setSelectedType(latestDBType.get('db_type_id'));
+                this.model.get("schemaDef").set('dbType', latestDBType).build().then(_.bind(function () {
+                    if (this.model.get("schemaDef").get("ready")) {
+                        this.model.execute();
+                    }
+                }, this));
+            }, this));
 
         },
         refresh: function () {

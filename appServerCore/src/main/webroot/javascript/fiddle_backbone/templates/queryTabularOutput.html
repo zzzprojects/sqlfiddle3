@@ -17,41 +17,48 @@
         </table>
     {{/if}}
     {{#if this.SUCCEEDED}}
-    <div id="messages_{{index}}" class="alert alert-success database-messages">
-        <i class="icon-ok"></i>
-        Record Count: {{this.RESULTS.DATA.length}}; Execution Time: {{this.EXECUTIONTIME}}ms
+        <div id="messages_{{index}}" class="alert alert-success database-messages">
+            <i class="icon-ok"></i>
+            Record Count: {{this.RESULTS.DATA.length}}; Execution Time: {{this.EXECUTIONTIME}}ms
+            {{#if this.EXECUTIONPLAN.DATA.length}}
+            <a href="#executionPlan" class="executionPlanLink"><i class="icon-plus"></i>View Execution Plan</a>
+            {{/if}}
+            <a href="#!{{../../schemaDef/dbType/id}}/{{../../schemaDef/short_code}}/{{../../id}}/{{index}}" class="setLink"><i class="icon-share-alt"></i> link</a>
+        </div>
+
         {{#if this.EXECUTIONPLAN.DATA.length}}
-        <a href="#executionPlan" class="executionPlanLink"><i class="icon-plus"></i>View Execution Plan</a>
-        {{/if}}
-        <a href="#!{{../../schemaDef/dbType/id}}/{{../../schemaDef/short_code}}/{{../../id}}/{{index}}" class="setLink"><i class="icon-share-alt"></i> link</a>
-    </div>
-
-    {{#if this.EXECUTIONPLAN.DATA.length}}
-        <table class="executionPlan table table-bordered">
-            <tr>
-            {{#each this.EXECUTIONPLAN.COLUMNS}}
-            <th>{{this}}</th>
-            {{/each}}
-            </tr>
-            {{#each this.EXECUTIONPLAN.DATA}}
-            <tr>
-                {{#each this}}
-                <td><div style="position:relative">{{{this}}}</div></td>
+            <table class="executionPlan table table-bordered">
+                <tr>
+                {{#each this.EXECUTIONPLAN.COLUMNS}}
+                <th>{{this}}</th>
                 {{/each}}
-            </tr>
-            {{/each}}
+                </tr>
+                {{#each this.EXECUTIONPLAN.DATA}}
+                <tr>
+                    {{#each this}}
+                    <td><div style="position:relative">{{{this}}}</div></td>
+                    {{/each}}
+                </tr>
+                {{/each}}
 
-        {{#if ../../../schemaDef/dbType/isPostgreSQL}}
-            <tr>
-                <td><form action="http://explain.depesz.com/" target="_new"><input type="hidden" name="title" value="{{../../schemaDef/dbType/id}}/{{../../schemaDef/short_code}}/{{../../id}}/{{index}}"><input type="hidden" name="plan" value=""><input type="submit" class="btn btn-info depesz" value="View on Depesz"></form></td>
-            </tr>
+            {{#if ../../../schemaDef/dbType/isPostgreSQL}}
+                <tr>
+                    <td><form action="http://explain.depesz.com/" target="_new"><input type="hidden" name="title" value="{{../../schemaDef/dbType/id}}/{{../../schemaDef/short_code}}/{{../../id}}/{{index}}"><input type="hidden" name="plan" value=""><input type="submit" class="btn btn-info depesz" value="View on Depesz"></form></td>
+                </tr>
+            {{/if}}
+
+            </table>
         {{/if}}
-
-        </table>
-    {{/if}}
 
     {{else}}
-    <div id="messages_{{index}}" class="alert alert-error database-messages"><i class="icon-remove"></i>{{this.ERRORMESSAGE}}</div>
+        <div id="messages_{{index}}" class="alert alert-error database-messages"><i class="icon-remove"></i>{{this.ERRORMESSAGE}}</div>
+
+        {{#unless ../../schemaDef/dbType/num_hosts}}
+            <div id="messages_{{index}}" class="alert alert-warning database-messages convert-to-latest">
+                <i class="icon-random"></i>Click here to convert current fiddle to use the latest available ( {{../../../latestDBType/full_name}} )
+            </div>
+        {{/unless}}
+
     {{/if}}
 </div>
 {{/each_with_index}}

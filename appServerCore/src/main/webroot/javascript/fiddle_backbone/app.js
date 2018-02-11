@@ -59,6 +59,7 @@ var obj = {
 
         var queryView = new QueryView({
             id: "sql",
+            dbTypes: dbTypes,
             model: query,
             output_el: $("#output")
         });
@@ -179,7 +180,7 @@ var obj = {
             queryView.setOutputType(this.id);
             queryView.renderOutput();
         });
-
+/*
         $("#queryPrettify").click(function (e) {
             var thisButton = $(this);
             thisButton.attr("disabled", true);
@@ -192,7 +193,7 @@ var obj = {
                 thisButton.attr("disabled", false);
             });
         });
-
+*/
         $(".terminator .dropdown-menu a").on('click', function (e) {
             e.preventDefault();
 

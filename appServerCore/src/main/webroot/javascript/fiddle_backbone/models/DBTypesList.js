@@ -15,6 +15,19 @@ define(["./OpenIDMResource", "Backbone", "./DBType"], function (idm, Backbone, D
                         return _this;
                     });
         },
+        getLatestDBTypeForSimpleName: function (simple_name) {
+            simple_name = simple_name || this.getSelectedType().get('simple_name');
+            return this
+            .filter(function (dbType) {
+                return  dbType.get("simple_name") === simple_name &&
+                        dbType.get("num_hosts") > 0;
+            })
+            // sorts the resulting list of dbTypes by full_name in descending order
+            // assumes that the versions of a given simple_name set are sortable alphabetically
+            .sort(function (dbTypeA, dbTypeB) {
+                return dbTypeA.get("full_name") > dbTypeB.get("full_name") ? -1 : 1;
+            })[0];
+        },
         getSelectedType: function () {
             return this.find(function (dbType) {
                 return dbType.get("selected");
