@@ -172,7 +172,7 @@ require([
     /* RESIZING UI*/
     function resizeLayout(){
 
-        var wheight = $(window).height() - 165;
+        var wheight = $(window).height() - 210;
         if (wheight > 400) {
             var container_width = $("#schema-output").width();
 
