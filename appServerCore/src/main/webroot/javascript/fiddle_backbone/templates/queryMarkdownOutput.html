@@ -10,6 +10,7 @@ Markdown is useful for posting on sites like <a href="http://stackoverflow.com" 
 {{code_format STATEMENT}}
 
 **[Results][{{add index 2}}]**:
+
     {{#if this.RESULTS.DATA.length}}
     |{{#each_simple_value_with_index this.RESULTS.COLUMNS}} {{result_display_padded ../this/RESULTS/COLUMNWIDTHS}} |{{/each_simple_value_with_index}}
     |{{#each_simple_value_with_index this.RESULTS.COLUMNS}}{{divider_display ../this/RESULTS/COLUMNWIDTHS}}{{/each_simple_value_with_index}}{{#each this.RESULTS.DATA}}
