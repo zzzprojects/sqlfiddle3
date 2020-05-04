@@ -1,9 +1,12 @@
-apiVersion: extensions/v1beta1
-kind: ReplicaSet
+apiVersion: apps/v1
+kind: Deployment
 metadata:
   namespace: sqlfiddle
   name: postgresql93
 spec:
+  selector:
+    matchLabels:
+      type: postgresql93
   replicas: 1
   template:
     metadata:

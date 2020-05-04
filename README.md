@@ -16,7 +16,7 @@ The application server is implemented with Vert.x.
 
 If you have installed Helm and Kubernetes is setup properly, you can launch the core system without even having to clone this project. Just run these commands:
 
-    helm repo add sqlfiddle https://jakefeasel.github.io/sqlfiddle3/charts/
+    helm repo add sqlfiddle https://zzzprojects.github.io/sqlfiddle3/charts/
     kubectl create namespace sqlfiddle
     helm install sqlfiddle/sqlfiddleOpenCore
 

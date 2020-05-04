@@ -1,9 +1,12 @@
-apiVersion: extensions/v1beta1
-kind: ReplicaSet
+apiVersion: apps/v1
+kind: Deployment
 metadata:
   namespace: sqlfiddle
   name: oracle11g
 spec:
+  selector:
+    matchLabels:
+      type: oracle11g
   replicas: 1
   template:
     metadata:
