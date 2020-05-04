@@ -1,9 +1,12 @@
-apiVersion: extensions/v1beta1
-kind: ReplicaSet
+apiVersion: apps/v1
+kind: Deployment
 metadata:
   namespace: sqlfiddle
   name: mssql2017
 spec:
+  selector:
+    matchLabels:
+      type: mssql2017
   replicas: 1
   template:
     metadata:
