@@ -1,4 +1,4 @@
-FROM vertx/vertx3:3.4.2
+FROM vertx/vertx3:3.9.0
 
 ENV VERTICLE_NAME sqlfiddle.groovy
 ENV VERTICLE_HOME /usr/verticles
@@ -7,8 +7,7 @@ ENV VERTX_HOME /usr/local/vertx
 EXPOSE 8080
 EXPOSE 5005
 
-RUN echo "deb http://ftp.debian.org/debian jessie-backports main" | tee -a /etc/apt/sources.list
-RUN apt-get update && apt-get -t jessie-backports install --yes maven
+RUN apt-get update && apt-get install --yes maven
 
 COPY src /tmp/src
 COPY pom.xml /tmp
