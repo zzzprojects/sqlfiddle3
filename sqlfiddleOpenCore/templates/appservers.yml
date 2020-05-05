@@ -27,7 +27,21 @@ spec:
       storage: 15Gi
 ---
 {{ end }}
-
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: root-cluster-admin-binding
+  resourceVersion: "2720316"
+  selfLink: /apis/rbac.authorization.k8s.io/v1/clusterrolebindings/root-cluster-admin-binding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-admin
+subjects:
+- apiGroup: rbac.authorization.k8s.io
+  kind: User
+  name: system:serviceaccount:sqlfiddle:default
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -161,7 +175,7 @@ spec:
     role: appserver
 {{ if .Values.isLocal }}
 ---
-apiVersion: apps/v1
+apiVersion: extensions/v1beta1
 kind: Ingress
 metadata:
   namespace: sqlfiddle
