@@ -254,10 +254,10 @@ class Query {
                 def query = queryQueue.get(0)
 
                 def performQuery = { finalExecutionPlanResults ->
-                    long startTime = (new Date()).toTimestamp().getTime()
+                    long startTime = (new Date()).getTime()
                     connection.query(query, { queryResult ->
                         def set = formatQueryResult(queryResult, query)
-                        set.EXECUTIONTIME = ((new Date()).toTimestamp().getTime() - startTime)
+                        set.EXECUTIONTIME = ((new Date()).getTime() - startTime)
 
                         if (finalExecutionPlanResults) {
                             set.EXECUTIONPLANRAW = finalExecutionPlanResults.raw
