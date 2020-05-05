@@ -2,15 +2,15 @@ apiVersion: v1
 entries:
   sqlfiddleCommercialExtension:
   - apiVersion: v1
-    created: "2020-05-04T13:09:46.152339433-07:00"
+    created: "2020-05-05T15:06:17.827341213-07:00"
     description: A Helm chart for commercial extensons to SQL Fiddle
-    digest: bfeed44f516015a67a033c7a0df6aef07a364df96334da60997650433d4ac613
+    digest: bdfd6993ae9929a92c140aa6262fd870cdbe9489e649c412e314735dc52fe3c9
     name: sqlfiddleCommercialExtension
     urls:
     - sqlfiddleCommercialExtension-2.0.0.tgz
     version: 2.0.0
   - apiVersion: v1
-    created: "2020-05-04T13:09:46.152071936-07:00"
+    created: "2020-05-05T15:06:17.827010227-07:00"
     description: A Helm chart for commercial extensons to SQL Fiddle
     digest: d8089181bfc8654d293253a5ac08a20be44cd14bc701c1572f011a595e82d8b4
     name: sqlfiddleCommercialExtension
@@ -18,7 +18,7 @@ entries:
     - sqlfiddleCommercialExtension-1.3.0.tgz
     version: 1.3.0
   - apiVersion: v1
-    created: "2020-05-04T13:09:46.151700825-07:00"
+    created: "2020-05-05T15:06:17.826581222-07:00"
     description: A Helm chart for commercial extensons to SQL Fiddle
     digest: 099d5e240df19db256e5f86c601fbdfaccbca0a45c5c333c445058053baaff42
     name: sqlfiddleCommercialExtension
@@ -26,7 +26,7 @@ entries:
     - sqlfiddleCommercialExtension-1.2.0.tgz
     version: 1.2.0
   - apiVersion: v1
-    created: "2020-05-04T13:09:46.151318574-07:00"
+    created: "2020-05-05T15:06:17.826187598-07:00"
     description: A Helm chart for commercial extensons to SQL Fiddle
     digest: b5b9877edf3e325e41adac526097986ce44323a5cb6ad1ad03458a9b3ec508f2
     name: sqlfiddleCommercialExtension
@@ -34,7 +34,7 @@ entries:
     - sqlfiddleCommercialExtension-1.1.0.tgz
     version: 1.1.0
   - apiVersion: v1
-    created: "2020-05-04T13:09:46.150976092-07:00"
+    created: "2020-05-05T15:06:17.825813588-07:00"
     description: A Helm chart for commercial extensons to SQL Fiddle
     digest: ffdf220f27dce135d39237f20e85b97101633904b555fc7cd664db3a6c1efced
     name: sqlfiddleCommercialExtension
@@ -43,15 +43,15 @@ entries:
     version: 1.0.0
   sqlfiddleOpenCore:
   - apiVersion: v1
-    created: "2020-05-04T13:09:46.153520616-07:00"
+    created: "2020-05-05T15:06:17.828695876-07:00"
     description: A Helm chart for the open-source core of SQL Fiddle
-    digest: 382a1038d6f634ff1f1e666085796b87fdfd2fb78779bf5b12b3639a6753dd5a
+    digest: 69cda4e8bcf00f6a854e0d4eae8973031aa7661bb6b81cce7e21aa2ace17c923
     name: sqlfiddleOpenCore
     urls:
     - sqlfiddleOpenCore-2.0.0.tgz
     version: 2.0.0
   - apiVersion: v1
-    created: "2020-05-04T13:09:46.153338034-07:00"
+    created: "2020-05-05T15:06:17.828506323-07:00"
     description: A Helm chart for the open-source core of SQL Fiddle
     digest: 2cb9a96d0e161d3cc04e1beb0d891a327f7947811fb738ab3350bdaddec3f345
     name: sqlfiddleOpenCore
@@ -59,7 +59,7 @@ entries:
     - sqlfiddleOpenCore-1.3.0.tgz
     version: 1.3.0
   - apiVersion: v1
-    created: "2020-05-04T13:09:46.153079547-07:00"
+    created: "2020-05-05T15:06:17.828208706-07:00"
     description: A Helm chart for the open-source core of SQL Fiddle
     digest: a1915624fe4694bffe2066b27d1eaf1d1694445d4d41a829a303e5652dd48dca
     name: sqlfiddleOpenCore
@@ -67,7 +67,7 @@ entries:
     - sqlfiddleOpenCore-1.2.0.tgz
     version: 1.2.0
   - apiVersion: v1
-    created: "2020-05-04T13:09:46.152826997-07:00"
+    created: "2020-05-05T15:06:17.827943548-07:00"
     description: A Helm chart for the open-source core of SQL Fiddle
     digest: 6a2bf87386f9bc3d67f6e2587ec4fd23334dbc73fbdb449afe16ae4e541543a6
     name: sqlfiddleOpenCore
@@ -75,11 +75,11 @@ entries:
     - sqlfiddleOpenCore-1.1.0.tgz
     version: 1.1.0
   - apiVersion: v1
-    created: "2020-05-04T13:09:46.152584938-07:00"
+    created: "2020-05-05T15:06:17.827693396-07:00"
     description: A Helm chart for the open-source core of SQL Fiddle
     digest: 21a42b90c1498b17d00cfcc09f6a9dc411d53c0e9696bc1c1947479f55c1cdb1
     name: sqlfiddleOpenCore
     urls:
     - sqlfiddleOpenCore-1.0.0.tgz
     version: 1.0.0
-generated: "2020-05-04T13:09:46.144703574-07:00"
+generated: "2020-05-05T15:06:17.82513986-07:00"
