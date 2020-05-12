@@ -4,7 +4,7 @@
 registryPrefix: 321080263678.dkr.ecr.us-west-2.amazonaws.com/sqlfiddle
 
 mssql2017Version: 1.0.3
-oracle11gVersion: 1.0.1
+oracle11gVersion: 1.0.3
 
 sqlfiddleOpenCore:
   appServerReplicas: 2
