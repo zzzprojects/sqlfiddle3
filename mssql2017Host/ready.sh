@@ -12,7 +12,13 @@ export DATABASE_COUNT=`/opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P "SQLSer
 
 echo "Found ${DATABASE_COUNT} MS SQL fiddle databases"
 
-if [ $DATABASE_COUNT -gt 25 ]
+export CREATED_TIME=`stat -c "%Z" /proc/1/`
+export CURRENT_TIME=`date +%s`
+export UPTIME_SECONDS=`expr $CURRENT_TIME - $CREATED_TIME`
+export UPTIME_MINUTES=`echo $(($UPTIME_SECONDS / 60))`
+echo "Up for ${UPTIME_MINUTES} minutes"
+
+if [ $DATABASE_COUNT -gt 25 ] || [ $UPTIME_MINUTES -gt 45 ]
 then
   exit 1
 else
