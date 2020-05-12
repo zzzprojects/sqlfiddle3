@@ -3,8 +3,8 @@
 
 registryPrefix: 321080263678.dkr.ecr.us-west-2.amazonaws.com/sqlfiddle
 
-mssql2017Version: 1.0.2
-oracle11gVersion: 1.0.0
+mssql2017Version: 1.0.3
+oracle11gVersion: 1.0.1
 
 sqlfiddleOpenCore:
   appServerReplicas: 2
@@ -16,6 +16,6 @@ sqlfiddleOpenCore:
   appServerVersion: 2.0.4
   varnishVersion: 1.0.0
   hostMonitorVersion: 1.0.0
-  mysql56Version: 1.0.0
-  postgresql93Version: 1.0.0
-  postgresql96Version: 1.0.0
+  mysql56Version: 1.0.1
+  postgresql93Version: 1.0.1
+  postgresql96Version: 1.0.1

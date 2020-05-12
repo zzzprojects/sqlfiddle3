@@ -6,7 +6,13 @@ export DATABASE_COUNT=`mysql -u root -ppassword mysql -e "show databases like 'd
 
 echo "Found ${DATABASE_COUNT} MySQL fiddle databases"
 
-if [ $DATABASE_COUNT -gt 50 ]
+export CREATED_TIME=`stat -c "%Z" /proc/1/`
+export CURRENT_TIME=`date +%s`
+export UPTIME_SECONDS=`expr $CURRENT_TIME - $CREATED_TIME`
+export UPTIME_MINUTES=`echo $(($UPTIME_SECONDS / 60))`
+echo "Up for ${UPTIME_MINUTES} minutes"
+
+if [ $DATABASE_COUNT -gt 50 ] || [ $UPTIME_MINUTES -gt 45 ]
 then
   exit 1
 else
