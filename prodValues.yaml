@@ -15,7 +15,7 @@ sqlfiddleOpenCore:
   appDatabaseIP: sqlfiddle.cq2t9zmnkkgq.us-west-2.rds.amazonaws.com
   appServerVersion: 2.0.4
   varnishVersion: 1.0.0
-  hostMonitorVersion: 1.0.0
+  hostMonitorVersion: 2.0.0
   mysql56Version: 1.0.1
   postgresql93Version: 1.0.1
   postgresql96Version: 1.0.1
