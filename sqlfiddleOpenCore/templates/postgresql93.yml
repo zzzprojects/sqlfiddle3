@@ -30,13 +30,6 @@ spec:
             initialDelaySeconds: 5
             timeoutSeconds: 5
             periodSeconds: 10
-          livenessProbe:
-            exec:
-              command:
-                - "/ready.sh"
-            initialDelaySeconds: 5
-            timeoutSeconds: 5
-            periodSeconds: 10
 ---
 kind: Service
 apiVersion: v1

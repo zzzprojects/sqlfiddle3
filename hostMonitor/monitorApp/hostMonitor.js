@@ -11,7 +11,7 @@ const postgresConnectionConfig = {
 
 const client = new pg.Client(postgresConnectionConfig);
 
-client.connect(function (err) {
+client.connect(async function (err) {
     if (err) {
         console.log('Failure to connect to appdatabase...');
         console.log(err);
@@ -22,11 +22,13 @@ client.connect(function (err) {
 
         return;
     }
-    const Api = require('kubernetes-client');
-    const JSONStream = require('json-stream');
+    const Client = require('kubernetes-client').Client
+    const Request = require('kubernetes-client/backends/request')
+    const backend = new Request(Request.config.getInCluster())
+    const k8s_client = new Client({ backend })
+    await k8s_client.loadSpec()
 
-    const core = new Api.Core(Api.config.getInCluster());
-    const ext = new Api.Extensions(Api.config.getInCluster());
+    const JSONStream = require('json-stream');
 
     const jsonStream = new JSONStream();
     var stream;
@@ -92,14 +94,14 @@ client.connect(function (err) {
                             // if we have a ready host, then we can safely scale down the replicas to remove this unready one
                             if (desiredHosts.length) {
                                 deleteHost(client, registeredHosts[host.jdbc_url_template])
-                                    .then(() => scale(ext, hostType, 1));
+                                    .then(() => scale(k8s_client, hostType, 1));
                             }
 
                         } else {
 
                             // if we a registration entry for this not ready host, mark it for removal and add another replica
                             markHostForRemoval(client, registeredHosts[host.jdbc_url_template]).then(
-                                () => scale(ext, hostType, 2)
+                                () => scale(k8s_client, hostType, 2)
                             );
 
                         }
@@ -121,9 +123,8 @@ client.connect(function (err) {
     }
 
     // watch a stream of changes related to database hosts
-    stream = core.ns.endpoints
-        .matchLabels({ role: 'host' })
-        .getStream({ qs: { watch: true } });
+    stream = k8s_client.api.v1.watch.namespaces('sqlfiddle').endpoints.getStream({ qs: { labelSelector: { role: 'host' } } });
+
     stream.pipe(jsonStream);
     jsonStream.on('data', watchStream);
 
@@ -132,9 +133,7 @@ client.connect(function (err) {
         console.log('RESTARTING WATCH STREAM...');
         stream.abort();
         const jsonStream = new JSONStream();
-        stream = core.ns.endpoints
-            .matchLabels({ role: 'host' })
-            .getStream({ qs: { watch: true } });
+        stream = k8s_client.api.v1.watch.namespaces('sqlfiddle').endpoints.getStream({ qs: { labelSelector: { role: 'host' } } });
         stream.pipe(jsonStream);
         jsonStream.on('data', watchStream);
     }, 300000);
@@ -142,12 +141,14 @@ client.connect(function (err) {
 });
 
 
-var scale = (ext, hostType, replicas) =>
-    ext.ns.rs(hostType.replace('-service', '')).patch({
-          body:  { spec: { replicas: replicas } }
-        },
-        (err, result) => console.log(JSON.stringify(err || result, null, 4))
-    );
+var scale = (k8s_client, hostType, replicas) => {
+    console.log("SCALING " + hostType.replace('-service', '') + " to " + replicas);
+    return k8s_client.apis.apps.v1.ns('sqlfiddle').deployments(hostType.replace('-service', '')).patch({
+              body:  { spec: { replicas: replicas } }
+            },
+            (err, result) => console.log(JSON.stringify(err || result, null, 4))
+        );
+};
 
 
 var getCurrentHostsByFullName = (client, full_name) =>

@@ -6,7 +6,7 @@
   "version": "3.0.0",
   "devDependencies": {
     "pg": "6.1.5",
-    "kubernetes-client": "3.17.1",
+    "kubernetes-client": "9.0.0",
     "json-stream": "1.0.0",
     "q": "1.5.0"
   }
