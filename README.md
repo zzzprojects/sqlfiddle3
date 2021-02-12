@@ -1,4 +1,17 @@
-# SQL Fiddle, version 3
+## Library Powered By
+
+This library is powered by [Entity Framework Extensions](https://entityframework-extensions.net/?z=github&y=entityframework-plus)
+
+<a href="https://entityframework-extensions.net/?z=github&y=entityframework-plus">
+<kbd>
+<img src="https://zzzprojects.github.io/images/logo/entityframework-extensions-pub.jpg" alt="Entity Framework Extensions" />
+</kbd>
+</a>
+
+---
+
+# What's SQL Fiddle? 
+*version 3*
 
 **A tool for easy online testing and sharing of database problems and their solutions.**
 
@@ -130,3 +143,37 @@ Use the value for "Address" as the host name for your URL. For example, based on
 ### Development tips
 
 When doing development locally in Minikube, you can make changes faster by providing a local NFS server on your host machine (the environment in which you are making changes). Change your helm chart values to specify your NFS server IP (by default, 192.168.99.1) and filesystem path. When the NFS server is specified, the helm chart will include a volume mount to your NFS path and will launch "grunt" within the container to watch for changes. This allows you to make changes to the appserver without having to rebuild / redeploy the container.
+
+## Usefull links
+
+- [Tool](http://sqlfiddle.com/)
+- [Sample Fiddle](http://sqlfiddle.com/#!9/a6c585/1) 
+- You can also consult thousands of HAP questions on 
+[Stack Overflow](https://stackoverflow.com/questions/tagged/sqlfiddle)
+
+## Contribute
+
+You want to help us? 
+Your donation directly helps us maintaining and growing ZZZ Free Projects. We can’t thank you enough for your support.
+
+### Why should I contribute to this free & open source library?
+We all love free and open source libraries!
+But there is a catch! Nothing is free in this world.
+Contributions allow us to spend more of our time on: Bug Fix, Content Writing, Development and Support.
+
+We NEED your help. Last year alone, we spent over **3000 hours** maintaining all our open source libraries.
+
+### How much should I contribute?
+Any amount is much appreciated. All our libraries together have more than 100 million downloads, if everyone could contribute a tiny amount, it would help us to make the .NET community a better place to code!
+
+Another great free way to contribute is  **spreading the word** about the library!
+ 
+A **HUGE THANKS** for your help.
+
+## More Projects
+
+- [EntityFramework Extensions](https://entityframework-extensions.net/)
+- [Dapper Plus](https://dapper-plus.net/)
+- [C# Eval Expression](https://eval-expression.net/)
+- and much more! 
+To view all our free and paid librariries visit our [website](https://zzzprojects.com/).
