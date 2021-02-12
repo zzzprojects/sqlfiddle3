@@ -77,7 +77,7 @@ You can build the container images with these commands:
 #### Extra steps necessary for Oracle 11g XE
 If you want to include Oracle 11g XE in your environment, you have to do some manual steps first (*thanks Oracle!*):
 
-1. Download ojdbc6.jar from http://www.oracle.com/technetwork/database/enterprise-edition/jdbc-112010-090769.html
+1. Download ojdbc6.jar from http://www.oracle.com/technetwork/database/enterprise-edition/jdbc-112010-090769.
 2. `cp ojdbc6.jar appServerExtended/`
 3. Download oracle-xe-11.2.0-1.0.x86_64.rpm.zip from http://www.oracle.com/technetwork/database/database-technologies/express-edition/downloads/index.html
 4. `cp oracle-xe-11.2.0-1.0.x86_64.rpm.zip oracle11gHost`
@@ -148,7 +148,7 @@ When doing development locally in Minikube, you can make changes faster by provi
 
 - [Tool](http://sqlfiddle.com/)
 - [Sample Fiddle](http://sqlfiddle.com/#!9/a6c585/1) 
-- You can also consult thousands of HAP questions on 
+- You can also consult tons of questions on 
 [Stack Overflow](https://stackoverflow.com/questions/tagged/sqlfiddle)
 
 ## Contribute
