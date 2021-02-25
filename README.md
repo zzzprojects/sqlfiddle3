@@ -144,7 +144,7 @@ Use the value for "Address" as the host name for your URL. For example, based on
 
 When doing development locally in Minikube, you can make changes faster by providing a local NFS server on your host machine (the environment in which you are making changes). Change your helm chart values to specify your NFS server IP (by default, 192.168.99.1) and filesystem path. When the NFS server is specified, the helm chart will include a volume mount to your NFS path and will launch "grunt" within the container to watch for changes. This allows you to make changes to the appserver without having to rebuild / redeploy the container.
 
-## Usefull links
+## Useful links
 
 - [Tool](http://sqlfiddle.com/)
 - [Sample Fiddle](http://sqlfiddle.com/#!9/a6c585/1) 
